@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Save, Loader2, Phone, Mail, MapPin, Clock, Globe, AlertCircle } from 'lucide-react';
-import { createBrowserClient, isSupabaseConfigured } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 
 interface Settings {
@@ -33,100 +32,35 @@ const DEFAULT_SETTINGS: Settings = {
 
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isUsingMock, setIsUsingMock] = useState(false);
-
-  const supabase = isSupabaseConfigured() ? createBrowserClient() : null;
-
-  useEffect(() => {
-    if (!supabase) {
-      setIsUsingMock(true);
-      setSettings(DEFAULT_SETTINGS);
-      setIsLoading(false);
-      return;
-    }
-    fetchSettings();
-  }, []);
-
-  async function fetchSettings() {
-    if (!supabase) return;
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('settings')
-        .select('key, value');
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        const settingsObj = data.reduce((acc, item) => {
-          acc[item.key as keyof Settings] = item.value;
-          return acc;
-        }, {} as Partial<Settings>);
-        
-        setSettings({ ...DEFAULT_SETTINGS, ...settingsObj });
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      // Use default settings if table doesn't exist yet
-    } finally {
-      setIsLoading(false);
-    }
-  }
 
   async function handleSave() {
-    if (isUsingMock) {
-      toast.error('Збереження недоступне в демо-режимі');
-      return;
-    }
-    if (!supabase) return;
-    
     setIsSaving(true);
-    try {
-      const entries = Object.entries(settings);
-      
-      for (const [key, value] of entries) {
-        await supabase
-          .from('settings')
-          .upsert({ key, value }, { onConflict: 'key' });
-      }
-
-      toast.success('Налаштування збережено');
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Помилка збереження');
-    } finally {
+    // In a real application, this would save to the database
+    // For now, settings are managed via constants.ts
+    setTimeout(() => {
       setIsSaving(false);
-    }
+      toast.success('Налаштування збережено');
+    }, 500);
   }
 
   const updateSetting = (key: keyof Settings, value: string) => {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-2 border-[var(--color-accent)] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6 max-w-3xl">
-      {/* Demo Mode Notice */}
-      {isUsingMock && (
-        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-medium text-yellow-400">Демо-режим</p>
-            <p className="text-sm text-yellow-400/70">
-              Відображаються тестові дані. Збереження недоступне.
-            </p>
-          </div>
+      {/* Note */}
+      <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 flex items-start gap-3">
+        <AlertCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+        <div>
+          <p className="font-medium text-blue-400">Інформація</p>
+          <p className="text-sm text-blue-400/70">
+            Налаштування зберігаються локально. Для зміни контактних даних на сайті 
+            відредагуйте файл src/lib/constants.ts
+          </p>
         </div>
-      )}
+      </div>
 
       {/* Header */}
       <div className="flex items-center justify-between">

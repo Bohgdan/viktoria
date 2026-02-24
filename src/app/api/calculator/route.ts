@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient as createServerClient } from '@/lib/supabase/server';
+import db from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
-    const { businessType, businessName, city, name, phone, email, comment } = data;
+    const { businessType, businessScale, name, phone, email, recommendedProducts } = data;
 
     if (!name || !phone) {
       return NextResponse.json(
@@ -13,32 +13,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = await createServerClient();
-
-    // Compose detailed message with business info
-    const message = [
-      `Тип бізнесу: ${businessType || 'Не вказано'}`,
-      `Назва закладу: ${businessName || 'Не вказано'}`,
-      `Місто: ${city || 'Не вказано'}`,
-      comment ? `Коментар: ${comment}` : '',
-    ].filter(Boolean).join('\n');
-
-    const { error } = await supabase.from('requests').insert({
+    await db.createCalculatorRequest({
       name,
       phone,
-      email: email || null,
-      message,
-      type: 'calculator',
-      status: 'new',
+      email: email || undefined,
+      business_type: businessType || 'Не вказано',
+      business_scale: businessScale || 'Не вказано',
+      recommended_products: recommendedProducts,
     });
-
-    if (error) {
-      console.error('Supabase error:', error);
-      return NextResponse.json(
-        { error: 'Помилка збереження заявки' },
-        { status: 500 }
-      );
-    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

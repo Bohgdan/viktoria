@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient as createServerClient } from '@/lib/supabase/server';
+import db from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,22 +13,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = await createServerClient();
-
-    const { error } = await supabase.from('requests').insert({
-      name,
-      phone,
-      type: 'callback',
-      status: 'new',
-    });
-
-    if (error) {
-      console.error('Supabase error:', error);
-      return NextResponse.json(
-        { error: 'Помилка збереження заявки' },
-        { status: 500 }
-      );
-    }
+    await db.createCallbackRequest({ name, phone });
 
     return NextResponse.json({ success: true });
   } catch (error) {

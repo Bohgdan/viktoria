@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, Search, Edit2, Trash2, Package, Loader2, X, AlertCircle } from 'lucide-react';
-import { createBrowserClient, isSupabaseConfigured } from '@/lib/supabase';
+import { Plus, Search, Edit2, Trash2, Package, Loader2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Product {
@@ -17,36 +16,15 @@ interface Product {
   is_available: boolean;
   is_popular: boolean;
   subcategory_id: string;
-  subcategory?: {
-    name: string;
-    category?: {
-      name: string;
-    };
-  };
+  category_name?: string;
+  subcategory_name?: string;
 }
 
 interface Subcategory {
   id: string;
   name: string;
-  category: {
-    id: string;
-    name: string;
-  } | null;
+  category_name?: string;
 }
-
-// Mock data for demo mode
-const MOCK_PRODUCTS: Product[] = [
-  { id: '1', name: 'Паприка закарпатська', slug: 'papryka-zakarpatska', description: 'Ароматна закарпатська паприка', price: 85, unit: 'кг', min_order: 5, image_url: null, is_available: true, is_popular: true, subcategory_id: '1', subcategory: { name: 'Паприка', category: { name: 'Спеції та приправи' } } },
-  { id: '2', name: 'Перець чорний мелений', slug: 'perets-chornyi-melenyi', description: 'Преміум якість', price: 180, unit: 'кг', min_order: 1, image_url: null, is_available: true, is_popular: true, subcategory_id: '1', subcategory: { name: 'Перець', category: { name: 'Спеції та приправи' } } },
-  { id: '3', name: 'Макарони рожки', slug: 'makarony-rozhky', description: 'Угорські макарони', price: 32, unit: 'кг', min_order: 20, image_url: null, is_available: true, is_popular: false, subcategory_id: '2', subcategory: { name: 'Рожки', category: { name: 'Макаронні вироби' } } },
-  { id: '4', name: 'Олія соняшникова 1л', slug: 'oliia-soniashnikova-1l', description: 'Рафінована', price: 48, unit: 'шт', min_order: 12, image_url: null, is_available: true, is_popular: true, subcategory_id: '3', subcategory: { name: 'Олія', category: { name: 'Олія та жири' } } },
-];
-
-const MOCK_SUBCATEGORIES: Subcategory[] = [
-  { id: '1', name: 'Паприка', category: { id: 'c1', name: 'Спеції та приправи' } },
-  { id: '2', name: 'Рожки', category: { id: 'c2', name: 'Макаронні вироби' } },
-  { id: '3', name: 'Олія', category: { id: 'c3', name: 'Олія та жири' } },
-];
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -56,7 +34,6 @@ export default function AdminProductsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [isUsingMock, setIsUsingMock] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -69,60 +46,34 @@ export default function AdminProductsPage() {
     is_popular: false,
   });
 
-  const supabase = isSupabaseConfigured() ? createBrowserClient() : null;
-
   useEffect(() => {
-    if (!supabase) {
-      setIsUsingMock(true);
-      setProducts(MOCK_PRODUCTS);
-      setSubcategories(MOCK_SUBCATEGORIES);
-      setIsLoading(false);
-      return;
-    }
     fetchProducts();
     fetchSubcategories();
   }, []);
 
   async function fetchProducts() {
-    if (!supabase) return;
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          *,
-          subcategory:subcategories(
-            name,
-            category:categories(name)
-          )
-        `)
-        .order('name');
-
-      if (error) throw error;
+      const res = await fetch('/api/admin/products');
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
       setProducts(data || []);
     } catch (error) {
       console.error('Error fetching products:', error);
       toast.error('Помилка завантаження товарів');
-      setIsUsingMock(true);
-      setProducts(MOCK_PRODUCTS);
     } finally {
       setIsLoading(false);
     }
   }
 
   async function fetchSubcategories() {
-    if (!supabase) return;
     try {
-      const { data, error } = await supabase
-        .from('subcategories')
-        .select('id, name, category:categories(id, name)')
-        .order('name');
-
-      if (error) throw error;
-      setSubcategories((data as unknown as Subcategory[]) || []);
+      const res = await fetch('/api/admin/categories');
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
+      setSubcategories(data.subcategories || []);
     } catch (error) {
       console.error('Error fetching subcategories:', error);
-      setSubcategories(MOCK_SUBCATEGORIES);
     }
   }
 
@@ -157,12 +108,6 @@ export default function AdminProductsPage() {
   }
 
   async function handleSave() {
-    if (isUsingMock) {
-      toast.error('Редагування недоступне в демо-режимі');
-      return;
-    }
-    if (!supabase) return;
-    
     if (!formData.name || !formData.subcategory_id) {
       toast.error('Заповніть обов\'язкові поля');
       return;
@@ -189,19 +134,20 @@ export default function AdminProductsPage() {
       };
 
       if (editingProduct) {
-        const { error } = await supabase
-          .from('products')
-          .update(productData)
-          .eq('id', editingProduct.id);
-
-        if (error) throw error;
+        const res = await fetch(`/api/admin/products/${editingProduct.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(productData),
+        });
+        if (!res.ok) throw new Error('Failed to update');
         toast.success('Товар оновлено');
       } else {
-        const { error } = await supabase
-          .from('products')
-          .insert(productData);
-
-        if (error) throw error;
+        const res = await fetch('/api/admin/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(productData),
+        });
+        if (!res.ok) throw new Error('Failed to create');
         toast.success('Товар додано');
       }
 
@@ -216,21 +162,11 @@ export default function AdminProductsPage() {
   }
 
   async function handleDelete(product: Product) {
-    if (isUsingMock) {
-      toast.error('Видалення недоступне в демо-режимі');
-      return;
-    }
-    if (!supabase) return;
-    
     if (!confirm(`Видалити товар "${product.name}"?`)) return;
 
     try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', product.id);
-
-      if (error) throw error;
+      const res = await fetch(`/api/admin/products/${product.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete');
       toast.success('Товар видалено');
       fetchProducts();
     } catch (error) {
@@ -241,13 +177,13 @@ export default function AdminProductsPage() {
 
   const filteredProducts = products.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.subcategory?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.subcategory?.category?.name.toLowerCase().includes(searchQuery.toLowerCase())
+    p.subcategory_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.category_name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Group subcategories by category for select
   const groupedSubcategories = subcategories.reduce((acc, sub) => {
-    const catName = sub.category?.name || 'Інше';
+    const catName = sub.category_name || 'Інше';
     if (!acc[catName]) acc[catName] = [];
     acc[catName].push(sub);
     return acc;
@@ -255,19 +191,6 @@ export default function AdminProductsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Demo Mode Notice */}
-      {isUsingMock && (
-        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-medium text-yellow-400">Демо-режим</p>
-            <p className="text-sm text-yellow-400/70">
-              Відображаються тестові дані. Редагування недоступне.
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -328,14 +251,14 @@ export default function AdminProductsPage() {
                         <div className="min-w-0">
                           <p className="font-medium text-[var(--color-text-primary)] truncate">{product.name}</p>
                           <p className="text-xs text-[var(--color-text-muted)] md:hidden">
-                            {product.subcategory?.category?.name}
+                            {product.category_name}
                           </p>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3 hidden md:table-cell">
-                      <p className="text-sm text-[var(--color-text-secondary)]">{product.subcategory?.category?.name}</p>
-                      <p className="text-xs text-[var(--color-text-muted)]">{product.subcategory?.name}</p>
+                      <p className="text-sm text-[var(--color-text-secondary)]">{product.category_name}</p>
+                      <p className="text-xs text-[var(--color-text-muted)]">{product.subcategory_name}</p>
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
                       <span className="text-[var(--color-text-primary)]">

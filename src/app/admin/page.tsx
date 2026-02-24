@@ -2,13 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Package, FolderTree, MessageSquare, Star, TrendingUp, Clock, ArrowRight, Settings, AlertCircle } from 'lucide-react';
-import { createBrowserClient, isSupabaseConfigured } from '@/lib/supabase';
+import { Package, FolderTree, MessageSquare, Star, TrendingUp, Clock, ArrowRight, Settings } from 'lucide-react';
 
 interface DashboardStats {
   products: number;
   categories: number;
-  requests: number;
   newRequests: number;
   reviews: number;
 }
@@ -22,80 +20,23 @@ interface RecentRequest {
   status: string;
 }
 
-// Mock data when Supabase is not configured
-const MOCK_STATS: DashboardStats = {
-  products: 47,
-  categories: 5,
-  requests: 12,
-  newRequests: 3,
-  reviews: 8,
-};
-
-const MOCK_REQUESTS: RecentRequest[] = [
-  { id: '1', name: 'Іван Петренко', phone: '+380501234567', type: 'callback', created_at: new Date().toISOString(), status: 'new' },
-  { id: '2', name: 'Марія Коваленко', phone: '+380671234567', type: 'order', created_at: new Date(Date.now() - 3600000).toISOString(), status: 'processing' },
-  { id: '3', name: 'Олексій Шевченко', phone: '+380931234567', type: 'calculator', created_at: new Date(Date.now() - 7200000).toISOString(), status: 'completed' },
-];
-
 export default function AdminDashboardPage() {
-  const [stats, setStats] = useState<DashboardStats>(MOCK_STATS);
-  const [recentRequests, setRecentRequests] = useState<RecentRequest[]>(MOCK_REQUESTS);
+  const [stats, setStats] = useState<DashboardStats>({ products: 0, categories: 0, newRequests: 0, reviews: 0 });
+  const [recentRequests, setRecentRequests] = useState<RecentRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isUsingMock, setIsUsingMock] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchData() {
-      // Check if Supabase is configured
-      if (!isSupabaseConfigured()) {
-        setIsUsingMock(true);
-        setStats(MOCK_STATS);
-        setRecentRequests(MOCK_REQUESTS);
-        setIsLoading(false);
-        return;
-      }
-
-      const supabase = createBrowserClient();
-      
-      if (!supabase) {
-        setIsUsingMock(true);
-        setStats(MOCK_STATS);
-        setRecentRequests(MOCK_REQUESTS);
-        setIsLoading(false);
-        return;
-      }
-
       try {
-        // Fetch stats
-        const [productsRes, categoriesRes, requestsRes, newRequestsRes, reviewsRes] = await Promise.all([
-          supabase.from('products').select('id', { count: 'exact', head: true }),
-          supabase.from('categories').select('id', { count: 'exact', head: true }),
-          supabase.from('requests').select('id', { count: 'exact', head: true }),
-          supabase.from('requests').select('id', { count: 'exact', head: true }).eq('status', 'new'),
-          supabase.from('reviews').select('id', { count: 'exact', head: true }),
-        ]);
-
-        setStats({
-          products: productsRes.count || 0,
-          categories: categoriesRes.count || 0,
-          requests: requestsRes.count || 0,
-          newRequests: newRequestsRes.count || 0,
-          reviews: reviewsRes.count || 0,
-        });
-
-        // Fetch recent requests
-        const { data: requests } = await supabase
-          .from('requests')
-          .select('id, name, phone, type, created_at, status')
-          .order('created_at', { ascending: false })
-          .limit(5);
-
-        setRecentRequests(requests || []);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-        // Fallback to mock data on error
-        setIsUsingMock(true);
-        setStats(MOCK_STATS);
-        setRecentRequests(MOCK_REQUESTS);
+        const res = await fetch('/api/admin/dashboard');
+        if (!res.ok) throw new Error('Failed to fetch dashboard data');
+        const data = await res.json();
+        setStats(data.stats);
+        setRecentRequests(data.recentRequests || []);
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        setError('Помилка завантаження даних');
       } finally {
         setIsLoading(false);
       }
@@ -107,7 +48,7 @@ export default function AdminDashboardPage() {
   const statCards = [
     { label: 'Товарів', value: stats.products, icon: Package, href: '/admin/products', color: 'bg-blue-500/10 text-blue-400' },
     { label: 'Категорій', value: stats.categories, icon: FolderTree, href: '/admin/categories', color: 'bg-green-500/10 text-green-400' },
-    { label: 'Заявок', value: stats.requests, icon: MessageSquare, href: '/admin/requests', color: 'bg-purple-500/10 text-purple-400', badge: stats.newRequests },
+    { label: 'Заявок', value: stats.newRequests, icon: MessageSquare, href: '/admin/requests', color: 'bg-purple-500/10 text-purple-400' },
     { label: 'Відгуків', value: stats.reviews, icon: Star, href: '/admin/reviews', color: 'bg-yellow-500/10 text-yellow-400' },
   ];
 
@@ -157,22 +98,16 @@ export default function AdminDashboardPage() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-red-500">{error}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
-      {/* Demo Mode Notice */}
-      {isUsingMock && (
-        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-medium text-yellow-400">Демо-режим</p>
-            <p className="text-sm text-yellow-400/70">
-              Supabase не налаштовано. Відображаються тестові дані. 
-              Для повного функціоналу налаштуйте змінні середовища.
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <div>
         <h1 className="text-2xl md:text-3xl font-serif font-bold text-[var(--color-text-primary)]">
@@ -197,11 +132,6 @@ export default function AdminDashboardPage() {
                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${stat.color}`}>
                   <Icon className="w-5 h-5" />
                 </div>
-                {stat.badge !== undefined && stat.badge > 0 && (
-                  <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
-                    {stat.badge}
-                  </span>
-                )}
               </div>
               <p className="text-2xl md:text-3xl font-bold text-[var(--color-text-primary)]">
                 {stat.value}

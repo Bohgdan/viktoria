@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Search, MessageSquare, Phone, Mail, Clock, Check, Loader2, Trash2, AlertCircle } from 'lucide-react';
-import { createBrowserClient, isSupabaseConfigured } from '@/lib/supabase';
+import { Search, MessageSquare, Phone, Mail, Clock, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Request {
@@ -29,70 +28,40 @@ const TYPE_LABELS: Record<string, string> = {
   order: 'Замовлення',
 };
 
-// Mock data for demo mode
-const MOCK_REQUESTS: Request[] = [
-  { id: '1', name: 'Іван Петренко', phone: '+380501234567', email: 'ivan@example.com', message: 'Цікавить прайс на спеції', type: 'callback', status: 'new', created_at: new Date().toISOString() },
-  { id: '2', name: 'Марія Коваленко', phone: '+380671234567', email: null, message: 'Хочу замовити макарони оптом', type: 'order', status: 'processing', created_at: new Date(Date.now() - 3600000).toISOString() },
-  { id: '3', name: 'Олексій Шевченко', phone: '+380931234567', email: 'oleksiy@shop.ua', message: null, type: 'calculator', status: 'completed', created_at: new Date(Date.now() - 86400000).toISOString() },
-];
-
 export default function AdminRequestsPage() {
   const [requests, setRequests] = useState<Request[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [isUsingMock, setIsUsingMock] = useState(false);
-
-  const supabase = isSupabaseConfigured() ? createBrowserClient() : null;
 
   useEffect(() => {
-    if (!supabase) {
-      setIsUsingMock(true);
-      setRequests(MOCK_REQUESTS);
-      setIsLoading(false);
-      return;
-    }
     fetchRequests();
   }, []);
 
   async function fetchRequests() {
-    if (!supabase) return;
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('requests')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
+      const res = await fetch('/api/admin/requests');
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
       setRequests(data || []);
     } catch (error) {
       console.error('Error fetching requests:', error);
       toast.error('Помилка завантаження заявок');
-      setIsUsingMock(true);
-      setRequests(MOCK_REQUESTS);
     } finally {
       setIsLoading(false);
     }
   }
 
-  async function updateStatus(id: string, status: string) {
-    if (isUsingMock) {
-      // Demo mode - update locally
-      setRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
-      toast.success('Статус оновлено (демо)');
-      return;
-    }
-    if (!supabase) return;
-    
+  async function updateStatus(id: string, type: string, status: string) {
     try {
-      const { error } = await supabase
-        .from('requests')
-        .update({ status })
-        .eq('id', id);
-
-      if (error) throw error;
+      const res = await fetch(`/api/admin/requests/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, status }),
+      });
+      if (!res.ok) throw new Error('Failed to update');
 
       setRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
       toast.success('Статус оновлено');
@@ -103,23 +72,13 @@ export default function AdminRequestsPage() {
   }
 
   async function handleDelete(request: Request) {
-    if (isUsingMock) {
-      // Demo mode - remove locally
-      setRequests(prev => prev.filter(r => r.id !== request.id));
-      toast.success('Заявку видалено (демо)');
-      return;
-    }
-    if (!supabase) return;
-    
     if (!confirm(`Видалити заявку від "${request.name}"?`)) return;
 
     try {
-      const { error } = await supabase
-        .from('requests')
-        .delete()
-        .eq('id', request.id);
-
-      if (error) throw error;
+      const res = await fetch(`/api/admin/requests/${request.id}?type=${request.type}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Failed to delete');
       toast.success('Заявку видалено');
       fetchRequests();
     } catch (error) {
@@ -151,19 +110,6 @@ export default function AdminRequestsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Demo Mode Notice */}
-      {isUsingMock && (
-        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-medium text-yellow-400">Демо-режим</p>
-            <p className="text-sm text-yellow-400/70">
-              Відображаються тестові дані.
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <div>
         <h1 className="text-2xl md:text-3xl font-serif font-bold text-[var(--color-text-primary)]">
@@ -284,7 +230,7 @@ export default function AdminRequestsPage() {
                         {STATUS_OPTIONS.map(opt => (
                           <button
                             key={opt.value}
-                            onClick={() => updateStatus(request.id, opt.value)}
+                            onClick={() => updateStatus(request.id, request.type, opt.value)}
                             className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
                               request.status === opt.value
                                 ? opt.color

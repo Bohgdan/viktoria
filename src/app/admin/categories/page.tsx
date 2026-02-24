@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, FolderTree, ChevronDown, ChevronRight, Loader2, X, AlertCircle } from 'lucide-react';
-import { createBrowserClient, isSupabaseConfigured } from '@/lib/supabase';
+import { Plus, Edit2, Trash2, FolderTree, ChevronDown, ChevronRight, Loader2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Category {
@@ -20,23 +19,9 @@ interface Subcategory {
   name: string;
   slug: string;
   category_id: string;
+  category_name?: string;
   sort_order: number;
 }
-
-// Mock data for demo mode
-const MOCK_CATEGORIES: Category[] = [
-  { id: 'c1', name: 'Спеції та приправи', slug: 'spetsii-ta-prypravy', description: 'Закарпатські спеції найвищої якості', image_url: null, sort_order: 1, subcategories: [
-    { id: 's1', name: 'Паприка', slug: 'papryka', category_id: 'c1', sort_order: 1 },
-    { id: 's2', name: 'Перець', slug: 'perets', category_id: 'c1', sort_order: 2 },
-  ]},
-  { id: 'c2', name: 'Макаронні вироби', slug: 'makaronni-vyroby', description: 'Угорські макарони', image_url: null, sort_order: 2, subcategories: [
-    { id: 's3', name: 'Рожки', slug: 'rozhky', category_id: 'c2', sort_order: 1 },
-    { id: 's4', name: 'Спіраль', slug: 'spiral', category_id: 'c2', sort_order: 2 },
-  ]},
-  { id: 'c3', name: 'Консервація', slug: 'konservatsiia', description: 'Якісна консервація', image_url: null, sort_order: 3, subcategories: [] },
-  { id: 'c4', name: 'Олія та жири', slug: 'oliia-ta-zhyry', description: 'Соняшникова олія', image_url: null, sort_order: 4, subcategories: [] },
-  { id: 'c5', name: 'Бакалія', slug: 'bakaliia', description: 'Сода, лимонна кислота', image_url: null, sort_order: 5, subcategories: [] },
-];
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -48,50 +33,29 @@ export default function AdminCategoriesPage() {
   const [parentCategoryId, setParentCategoryId] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({ name: '', description: '' });
-  const [isUsingMock, setIsUsingMock] = useState(false);
-
-  const supabase = isSupabaseConfigured() ? createBrowserClient() : null;
 
   useEffect(() => {
-    if (!supabase) {
-      setIsUsingMock(true);
-      setCategories(MOCK_CATEGORIES);
-      setExpandedIds(new Set(MOCK_CATEGORIES.map(c => c.id)));
-      setIsLoading(false);
-      return;
-    }
     fetchCategories();
   }, []);
 
   async function fetchCategories() {
-    if (!supabase) return;
     setIsLoading(true);
     try {
-      const { data: cats, error: catsError } = await supabase
-        .from('categories')
-        .select('*')
-        .order('sort_order');
-
-      if (catsError) throw catsError;
-
-      const { data: subs, error: subsError } = await supabase
-        .from('subcategories')
-        .select('*')
-        .order('sort_order');
-
-      if (subsError) throw subsError;
-
-      const categoriesWithSubs = (cats || []).map(cat => ({
+      const res = await fetch('/api/admin/categories');
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
+      
+      // Combine categories with subcategories
+      const categoriesWithSubs = (data.categories || []).map((cat: Category) => ({
         ...cat,
-        subcategories: (subs || []).filter(s => s.category_id === cat.id),
+        subcategories: (data.subcategories || []).filter((s: Subcategory) => s.category_id === cat.id),
       }));
-
+      
       setCategories(categoriesWithSubs);
+      setExpandedIds(new Set(categoriesWithSubs.map((c: Category) => c.id)));
     } catch (error) {
       console.error('Error:', error);
       toast.error('Помилка завантаження');
-      setIsUsingMock(true);
-      setCategories(MOCK_CATEGORIES);
     } finally {
       setIsLoading(false);
     }
@@ -129,12 +93,6 @@ export default function AdminCategoriesPage() {
   }
 
   async function handleSave() {
-    if (isUsingMock) {
-      toast.error('Редагування недоступне в демо-режимі');
-      return;
-    }
-    if (!supabase) return;
-    
     if (!formData.name) {
       toast.error('Введіть назву');
       return;
@@ -155,25 +113,46 @@ export default function AdminCategoriesPage() {
         };
 
         if (editingItem) {
-          await supabase.from('categories').update(data).eq('id', editingItem.id);
+          const res = await fetch(`/api/admin/categories/${editingItem.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+          });
+          if (!res.ok) throw new Error('Failed to update');
           toast.success('Категорію оновлено');
         } else {
-          await supabase.from('categories').insert({ ...data, sort_order: categories.length });
+          const res = await fetch('/api/admin/categories', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...data, sort_order: categories.length }),
+          });
+          if (!res.ok) throw new Error('Failed to create');
           toast.success('Категорію додано');
         }
       } else {
         const data = {
+          type: 'subcategory',
           name: formData.name,
           slug,
           category_id: parentCategoryId,
         };
 
         if (editingItem) {
-          await supabase.from('subcategories').update(data).eq('id', editingItem.id);
+          const res = await fetch(`/api/admin/categories/${editingItem.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: formData.name, slug }),
+          });
+          if (!res.ok) throw new Error('Failed to update');
           toast.success('Підкатегорію оновлено');
         } else {
           const parent = categories.find(c => c.id === parentCategoryId);
-          await supabase.from('subcategories').insert({ ...data, sort_order: parent?.subcategories?.length || 0 });
+          const res = await fetch('/api/admin/categories', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...data, sort_order: parent?.subcategories?.length || 0 }),
+          });
+          if (!res.ok) throw new Error('Failed to create');
           toast.success('Підкатегорію додано');
         }
       }
@@ -189,16 +168,11 @@ export default function AdminCategoriesPage() {
   }
 
   async function handleDeleteCategory(category: Category) {
-    if (isUsingMock) {
-      toast.error('Видалення недоступне в демо-режимі');
-      return;
-    }
-    if (!supabase) return;
-    
     if (!confirm(`Видалити категорію "${category.name}" з усіма підкатегоріями?`)) return;
 
     try {
-      await supabase.from('categories').delete().eq('id', category.id);
+      const res = await fetch(`/api/admin/categories/${category.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete');
       toast.success('Категорію видалено');
       fetchCategories();
     } catch (error) {
@@ -208,16 +182,11 @@ export default function AdminCategoriesPage() {
   }
 
   async function handleDeleteSubcategory(subcategory: Subcategory) {
-    if (isUsingMock) {
-      toast.error('Видалення недоступне в демо-режимі');
-      return;
-    }
-    if (!supabase) return;
-    
     if (!confirm(`Видалити підкатегорію "${subcategory.name}"?`)) return;
 
     try {
-      await supabase.from('subcategories').delete().eq('id', subcategory.id);
+      const res = await fetch(`/api/admin/categories/${subcategory.id}?type=subcategory`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete');
       toast.success('Підкатегорію видалено');
       fetchCategories();
     } catch (error) {
@@ -236,19 +205,6 @@ export default function AdminCategoriesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Demo Mode Notice */}
-      {isUsingMock && (
-        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-medium text-yellow-400">Демо-режим</p>
-            <p className="text-sm text-yellow-400/70">
-              Відображаються тестові дані. Редагування недоступне.
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

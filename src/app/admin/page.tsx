@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Package, FolderTree, MessageSquare, Star, TrendingUp, Clock, ArrowRight, Settings } from 'lucide-react';
-import { createBrowserClient } from '@/lib/supabase';
+import { Package, FolderTree, MessageSquare, Star, TrendingUp, Clock, ArrowRight, Settings, AlertCircle } from 'lucide-react';
+import { createBrowserClient, isSupabaseConfigured } from '@/lib/supabase';
 
 interface DashboardStats {
   products: number;
@@ -22,20 +22,47 @@ interface RecentRequest {
   status: string;
 }
 
+// Mock data when Supabase is not configured
+const MOCK_STATS: DashboardStats = {
+  products: 47,
+  categories: 5,
+  requests: 12,
+  newRequests: 3,
+  reviews: 8,
+};
+
+const MOCK_REQUESTS: RecentRequest[] = [
+  { id: '1', name: 'Іван Петренко', phone: '+380501234567', type: 'callback', created_at: new Date().toISOString(), status: 'new' },
+  { id: '2', name: 'Марія Коваленко', phone: '+380671234567', type: 'order', created_at: new Date(Date.now() - 3600000).toISOString(), status: 'processing' },
+  { id: '3', name: 'Олексій Шевченко', phone: '+380931234567', type: 'calculator', created_at: new Date(Date.now() - 7200000).toISOString(), status: 'completed' },
+];
+
 export default function AdminDashboardPage() {
-  const [stats, setStats] = useState<DashboardStats>({
-    products: 0,
-    categories: 0,
-    requests: 0,
-    newRequests: 0,
-    reviews: 0,
-  });
-  const [recentRequests, setRecentRequests] = useState<RecentRequest[]>([]);
+  const [stats, setStats] = useState<DashboardStats>(MOCK_STATS);
+  const [recentRequests, setRecentRequests] = useState<RecentRequest[]>(MOCK_REQUESTS);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUsingMock, setIsUsingMock] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
+      // Check if Supabase is configured
+      if (!isSupabaseConfigured()) {
+        setIsUsingMock(true);
+        setStats(MOCK_STATS);
+        setRecentRequests(MOCK_REQUESTS);
+        setIsLoading(false);
+        return;
+      }
+
       const supabase = createBrowserClient();
+      
+      if (!supabase) {
+        setIsUsingMock(true);
+        setStats(MOCK_STATS);
+        setRecentRequests(MOCK_REQUESTS);
+        setIsLoading(false);
+        return;
+      }
 
       try {
         // Fetch stats
@@ -65,6 +92,10 @@ export default function AdminDashboardPage() {
         setRecentRequests(requests || []);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+        // Fallback to mock data on error
+        setIsUsingMock(true);
+        setStats(MOCK_STATS);
+        setRecentRequests(MOCK_REQUESTS);
       } finally {
         setIsLoading(false);
       }
@@ -128,6 +159,20 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-8">
+      {/* Demo Mode Notice */}
+      {isUsingMock && (
+        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-yellow-400">Демо-режим</p>
+            <p className="text-sm text-yellow-400/70">
+              Supabase не налаштовано. Відображаються тестові дані. 
+              Для повного функціоналу налаштуйте змінні середовища.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div>
         <h1 className="text-2xl md:text-3xl font-serif font-bold text-[var(--color-text-primary)]">

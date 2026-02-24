@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, Star, Loader2, X, Check, XIcon } from 'lucide-react';
-import { createBrowserClient } from '@/lib/supabase';
+import { Plus, Edit2, Trash2, Star, Loader2, X, Check, XIcon, AlertCircle } from 'lucide-react';
+import { createBrowserClient, isSupabaseConfigured } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 
 interface Review {
@@ -15,12 +15,20 @@ interface Review {
   created_at: string;
 }
 
+// Mock data for demo mode
+const MOCK_REVIEWS: Review[] = [
+  { id: '1', author_name: 'Петро Мельник', company_name: 'ТОВ "Продукти"', text: 'Чудова якість спецій! Працюємо вже 2 роки.', rating: 5, is_published: true, created_at: new Date().toISOString() },
+  { id: '2', author_name: 'Оксана Ковальчук', company_name: 'Магазин "Смак"', text: 'Швидка доставка, хороші ціни.', rating: 5, is_published: true, created_at: new Date(Date.now() - 86400000).toISOString() },
+  { id: '3', author_name: 'Андрій Бондар', company_name: null, text: 'Рекомендую!', rating: 4, is_published: false, created_at: new Date(Date.now() - 172800000).toISOString() },
+];
+
 export default function AdminReviewsPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingReview, setEditingReview] = useState<Review | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUsingMock, setIsUsingMock] = useState(false);
   const [formData, setFormData] = useState({
     author_name: '',
     company_name: '',
@@ -29,13 +37,20 @@ export default function AdminReviewsPage() {
     is_published: true,
   });
 
-  const supabase = createBrowserClient();
+  const supabase = isSupabaseConfigured() ? createBrowserClient() : null;
 
   useEffect(() => {
+    if (!supabase) {
+      setIsUsingMock(true);
+      setReviews(MOCK_REVIEWS);
+      setIsLoading(false);
+      return;
+    }
     fetchReviews();
   }, []);
 
   async function fetchReviews() {
+    if (!supabase) return;
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -48,6 +63,8 @@ export default function AdminReviewsPage() {
     } catch (error) {
       console.error('Error:', error);
       toast.error('Помилка завантаження');
+      setIsUsingMock(true);
+      setReviews(MOCK_REVIEWS);
     } finally {
       setIsLoading(false);
     }
@@ -66,6 +83,12 @@ export default function AdminReviewsPage() {
   }
 
   async function handleSave() {
+    if (isUsingMock) {
+      toast.error('Редагування недоступне в демо-режимі');
+      return;
+    }
+    if (!supabase) return;
+    
     if (!formData.author_name || !formData.text) {
       toast.error('Заповніть обов\'язкові поля');
       return;
@@ -100,6 +123,13 @@ export default function AdminReviewsPage() {
   }
 
   async function togglePublished(review: Review) {
+    if (isUsingMock) {
+      setReviews(prev => prev.map(r => r.id === review.id ? { ...r, is_published: !r.is_published } : r));
+      toast.success(review.is_published ? 'Відгук приховано (демо)' : 'Відгук опубліковано (демо)');
+      return;
+    }
+    if (!supabase) return;
+    
     try {
       await supabase.from('reviews').update({ is_published: !review.is_published }).eq('id', review.id);
       setReviews(prev => prev.map(r => r.id === review.id ? { ...r, is_published: !r.is_published } : r));
@@ -111,6 +141,13 @@ export default function AdminReviewsPage() {
   }
 
   async function handleDelete(review: Review) {
+    if (isUsingMock) {
+      setReviews(prev => prev.filter(r => r.id !== review.id));
+      toast.success('Відгук видалено (демо)');
+      return;
+    }
+    if (!supabase) return;
+    
     if (!confirm(`Видалити відгук від "${review.author_name}"?`)) return;
 
     try {
@@ -141,6 +178,19 @@ export default function AdminReviewsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Demo Mode Notice */}
+      {isUsingMock && (
+        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-yellow-400">Демо-режим</p>
+            <p className="text-sm text-yellow-400/70">
+              Відображаються тестові дані.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

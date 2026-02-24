@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, FolderTree, ChevronDown, ChevronRight, Loader2, X } from 'lucide-react';
-import { createBrowserClient } from '@/lib/supabase';
+import { Plus, Edit2, Trash2, FolderTree, ChevronDown, ChevronRight, Loader2, X, AlertCircle } from 'lucide-react';
+import { createBrowserClient, isSupabaseConfigured } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 
 interface Category {
@@ -23,6 +23,21 @@ interface Subcategory {
   sort_order: number;
 }
 
+// Mock data for demo mode
+const MOCK_CATEGORIES: Category[] = [
+  { id: 'c1', name: 'Спеції та приправи', slug: 'spetsii-ta-prypravy', description: 'Закарпатські спеції найвищої якості', image_url: null, sort_order: 1, subcategories: [
+    { id: 's1', name: 'Паприка', slug: 'papryka', category_id: 'c1', sort_order: 1 },
+    { id: 's2', name: 'Перець', slug: 'perets', category_id: 'c1', sort_order: 2 },
+  ]},
+  { id: 'c2', name: 'Макаронні вироби', slug: 'makaronni-vyroby', description: 'Угорські макарони', image_url: null, sort_order: 2, subcategories: [
+    { id: 's3', name: 'Рожки', slug: 'rozhky', category_id: 'c2', sort_order: 1 },
+    { id: 's4', name: 'Спіраль', slug: 'spiral', category_id: 'c2', sort_order: 2 },
+  ]},
+  { id: 'c3', name: 'Консервація', slug: 'konservatsiia', description: 'Якісна консервація', image_url: null, sort_order: 3, subcategories: [] },
+  { id: 'c4', name: 'Олія та жири', slug: 'oliia-ta-zhyry', description: 'Соняшникова олія', image_url: null, sort_order: 4, subcategories: [] },
+  { id: 'c5', name: 'Бакалія', slug: 'bakaliia', description: 'Сода, лимонна кислота', image_url: null, sort_order: 5, subcategories: [] },
+];
+
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -33,14 +48,23 @@ export default function AdminCategoriesPage() {
   const [parentCategoryId, setParentCategoryId] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({ name: '', description: '' });
+  const [isUsingMock, setIsUsingMock] = useState(false);
 
-  const supabase = createBrowserClient();
+  const supabase = isSupabaseConfigured() ? createBrowserClient() : null;
 
   useEffect(() => {
+    if (!supabase) {
+      setIsUsingMock(true);
+      setCategories(MOCK_CATEGORIES);
+      setExpandedIds(new Set(MOCK_CATEGORIES.map(c => c.id)));
+      setIsLoading(false);
+      return;
+    }
     fetchCategories();
   }, []);
 
   async function fetchCategories() {
+    if (!supabase) return;
     setIsLoading(true);
     try {
       const { data: cats, error: catsError } = await supabase
@@ -66,6 +90,8 @@ export default function AdminCategoriesPage() {
     } catch (error) {
       console.error('Error:', error);
       toast.error('Помилка завантаження');
+      setIsUsingMock(true);
+      setCategories(MOCK_CATEGORIES);
     } finally {
       setIsLoading(false);
     }
@@ -103,6 +129,12 @@ export default function AdminCategoriesPage() {
   }
 
   async function handleSave() {
+    if (isUsingMock) {
+      toast.error('Редагування недоступне в демо-режимі');
+      return;
+    }
+    if (!supabase) return;
+    
     if (!formData.name) {
       toast.error('Введіть назву');
       return;
@@ -157,6 +189,12 @@ export default function AdminCategoriesPage() {
   }
 
   async function handleDeleteCategory(category: Category) {
+    if (isUsingMock) {
+      toast.error('Видалення недоступне в демо-режимі');
+      return;
+    }
+    if (!supabase) return;
+    
     if (!confirm(`Видалити категорію "${category.name}" з усіма підкатегоріями?`)) return;
 
     try {
@@ -170,6 +208,12 @@ export default function AdminCategoriesPage() {
   }
 
   async function handleDeleteSubcategory(subcategory: Subcategory) {
+    if (isUsingMock) {
+      toast.error('Видалення недоступне в демо-режимі');
+      return;
+    }
+    if (!supabase) return;
+    
     if (!confirm(`Видалити підкатегорію "${subcategory.name}"?`)) return;
 
     try {
@@ -192,6 +236,19 @@ export default function AdminCategoriesPage() {
 
   return (
     <div className="space-y-6">
+      {/* Demo Mode Notice */}
+      {isUsingMock && (
+        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-yellow-400">Демо-режим</p>
+            <p className="text-sm text-yellow-400/70">
+              Відображаються тестові дані. Редагування недоступне.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Save, Loader2, Phone, Mail, MapPin, Clock, Globe } from 'lucide-react';
-import { createBrowserClient } from '@/lib/supabase';
+import { Save, Loader2, Phone, Mail, MapPin, Clock, Globe, AlertCircle } from 'lucide-react';
+import { createBrowserClient, isSupabaseConfigured } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 
 interface Settings {
@@ -19,14 +19,14 @@ interface Settings {
 }
 
 const DEFAULT_SETTINGS: Settings = {
-  phone: '+380 50 123 45 67',
-  email: 'info@perfect4you.com.ua',
-  address: 'м. Ужгород, вул. Гагаріна, 45',
-  working_hours: 'Пн–Пт: 9:00–18:00',
-  instagram: 'https://instagram.com/perfect4you',
-  facebook: 'https://facebook.com/perfect4you',
-  telegram: '@perfect4you',
-  viber: '+380501234567',
+  phone: '+380 (50) 517-25-93',
+  email: 'fop.payk@ukr.net',
+  address: 'Україна, Закарпатська обл.',
+  working_hours: 'Пн–Пт: 9:00–18:00, Сб: 9:00-14:00',
+  instagram: '',
+  facebook: '',
+  telegram: '+380505172593',
+  viber: '+380505172593',
   site_title: 'Perfect 4 you - Оптові поставки бакалії',
   site_description: 'Прямі поставки спецій, макаронів та бакалії з Закарпаття. Понад 1000 постійних клієнтів з 2013 року.',
 };
@@ -35,14 +35,22 @@ export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUsingMock, setIsUsingMock] = useState(false);
 
-  const supabase = createBrowserClient();
+  const supabase = isSupabaseConfigured() ? createBrowserClient() : null;
 
   useEffect(() => {
+    if (!supabase) {
+      setIsUsingMock(true);
+      setSettings(DEFAULT_SETTINGS);
+      setIsLoading(false);
+      return;
+    }
     fetchSettings();
   }, []);
 
   async function fetchSettings() {
+    if (!supabase) return;
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -68,6 +76,12 @@ export default function AdminSettingsPage() {
   }
 
   async function handleSave() {
+    if (isUsingMock) {
+      toast.error('Збереження недоступне в демо-режимі');
+      return;
+    }
+    if (!supabase) return;
+    
     setIsSaving(true);
     try {
       const entries = Object.entries(settings);
@@ -101,6 +115,19 @@ export default function AdminSettingsPage() {
 
   return (
     <div className="space-y-6 max-w-3xl">
+      {/* Demo Mode Notice */}
+      {isUsingMock && (
+        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-yellow-400">Демо-режим</p>
+            <p className="text-sm text-yellow-400/70">
+              Відображаються тестові дані. Збереження недоступне.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

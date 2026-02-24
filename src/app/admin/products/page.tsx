@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, Search, Edit2, Trash2, Package, Loader2, X } from 'lucide-react';
-import { createBrowserClient } from '@/lib/supabase';
+import { Plus, Search, Edit2, Trash2, Package, Loader2, X, AlertCircle } from 'lucide-react';
+import { createBrowserClient, isSupabaseConfigured } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 
 interface Product {
@@ -34,6 +34,20 @@ interface Subcategory {
   } | null;
 }
 
+// Mock data for demo mode
+const MOCK_PRODUCTS: Product[] = [
+  { id: '1', name: 'Паприка закарпатська', slug: 'papryka-zakarpatska', description: 'Ароматна закарпатська паприка', price: 85, unit: 'кг', min_order: 5, image_url: null, is_available: true, is_popular: true, subcategory_id: '1', subcategory: { name: 'Паприка', category: { name: 'Спеції та приправи' } } },
+  { id: '2', name: 'Перець чорний мелений', slug: 'perets-chornyi-melenyi', description: 'Преміум якість', price: 180, unit: 'кг', min_order: 1, image_url: null, is_available: true, is_popular: true, subcategory_id: '1', subcategory: { name: 'Перець', category: { name: 'Спеції та приправи' } } },
+  { id: '3', name: 'Макарони рожки', slug: 'makarony-rozhky', description: 'Угорські макарони', price: 32, unit: 'кг', min_order: 20, image_url: null, is_available: true, is_popular: false, subcategory_id: '2', subcategory: { name: 'Рожки', category: { name: 'Макаронні вироби' } } },
+  { id: '4', name: 'Олія соняшникова 1л', slug: 'oliia-soniashnikova-1l', description: 'Рафінована', price: 48, unit: 'шт', min_order: 12, image_url: null, is_available: true, is_popular: true, subcategory_id: '3', subcategory: { name: 'Олія', category: { name: 'Олія та жири' } } },
+];
+
+const MOCK_SUBCATEGORIES: Subcategory[] = [
+  { id: '1', name: 'Паприка', category: { id: 'c1', name: 'Спеції та приправи' } },
+  { id: '2', name: 'Рожки', category: { id: 'c2', name: 'Макаронні вироби' } },
+  { id: '3', name: 'Олія', category: { id: 'c3', name: 'Олія та жири' } },
+];
+
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
@@ -42,6 +56,7 @@ export default function AdminProductsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUsingMock, setIsUsingMock] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -54,14 +69,22 @@ export default function AdminProductsPage() {
     is_popular: false,
   });
 
-  const supabase = createBrowserClient();
+  const supabase = isSupabaseConfigured() ? createBrowserClient() : null;
 
   useEffect(() => {
+    if (!supabase) {
+      setIsUsingMock(true);
+      setProducts(MOCK_PRODUCTS);
+      setSubcategories(MOCK_SUBCATEGORIES);
+      setIsLoading(false);
+      return;
+    }
     fetchProducts();
     fetchSubcategories();
   }, []);
 
   async function fetchProducts() {
+    if (!supabase) return;
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -80,12 +103,15 @@ export default function AdminProductsPage() {
     } catch (error) {
       console.error('Error fetching products:', error);
       toast.error('Помилка завантаження товарів');
+      setIsUsingMock(true);
+      setProducts(MOCK_PRODUCTS);
     } finally {
       setIsLoading(false);
     }
   }
 
   async function fetchSubcategories() {
+    if (!supabase) return;
     try {
       const { data, error } = await supabase
         .from('subcategories')
@@ -96,6 +122,7 @@ export default function AdminProductsPage() {
       setSubcategories((data as unknown as Subcategory[]) || []);
     } catch (error) {
       console.error('Error fetching subcategories:', error);
+      setSubcategories(MOCK_SUBCATEGORIES);
     }
   }
 
@@ -130,6 +157,12 @@ export default function AdminProductsPage() {
   }
 
   async function handleSave() {
+    if (isUsingMock) {
+      toast.error('Редагування недоступне в демо-режимі');
+      return;
+    }
+    if (!supabase) return;
+    
     if (!formData.name || !formData.subcategory_id) {
       toast.error('Заповніть обов\'язкові поля');
       return;
@@ -183,6 +216,12 @@ export default function AdminProductsPage() {
   }
 
   async function handleDelete(product: Product) {
+    if (isUsingMock) {
+      toast.error('Видалення недоступне в демо-режимі');
+      return;
+    }
+    if (!supabase) return;
+    
     if (!confirm(`Видалити товар "${product.name}"?`)) return;
 
     try {
@@ -216,6 +255,19 @@ export default function AdminProductsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Demo Mode Notice */}
+      {isUsingMock && (
+        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-yellow-400">Демо-режим</p>
+            <p className="text-sm text-yellow-400/70">
+              Відображаються тестові дані. Редагування недоступне.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

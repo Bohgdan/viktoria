@@ -1,0 +1,113 @@
+import { Suspense } from 'react';
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { PLACEHOLDER } from '@/lib/constants';
+import { getProductBySlug, getRelatedProducts, CATEGORIES } from '@/lib/data';
+import { Breadcrumbs, ProductDetail, ProductGrid } from '@/components/catalog';
+import { PageLoader } from '@/components/ui';
+import type { BreadcrumbItem } from '@/lib/types';
+
+interface ProductPageProps {
+  params: Promise<{
+    productSlug: string;
+  }>;
+}
+
+function getProductData(slug: string) {
+  const product = getProductBySlug(slug);
+  
+  if (!product) {
+    return null;
+  }
+
+  const category = CATEGORIES.find(c => c.id === product.category_id);
+  const relatedProducts = getRelatedProducts(product.id, product.category_id || '', 4);
+
+  return {
+    product,
+    category,
+    relatedProducts,
+  };
+}
+
+export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+  const { productSlug } = await params;
+  const data = getProductData(productSlug);
+  
+  if (!data) {
+    return {
+      title: 'Товар не знайдено',
+    };
+  }
+
+  return {
+    title: `${data.product.name} | ${PLACEHOLDER.companyName}`,
+    description: data.product.description || `${data.product.name} оптом від ${PLACEHOLDER.companyName}`,
+  };
+}
+
+function ProductContent({ slug }: { slug: string }) {
+  const data = getProductData(slug);
+  
+  if (!data) {
+    notFound();
+  }
+
+  const { product, category, relatedProducts } = data;
+
+  return (
+    <>
+      <ProductDetail product={product} category={category} />
+
+      {/* Related Products */}
+      {relatedProducts.length > 0 && (
+        <section className="mt-16">
+          <h2 className="text-2xl font-bold text-[var(--color-text-primary)] mb-8">
+            Схожі товари
+          </h2>
+          <ProductGrid 
+            products={relatedProducts}
+            categorySlug={category?.slug}
+          />
+        </section>
+      )}
+    </>
+  );
+}
+
+export default async function ProductPage({ params }: ProductPageProps) {
+  const { productSlug } = await params;
+  const data = getProductData(productSlug);
+  
+  if (!data) {
+    notFound();
+  }
+
+  const { product, category } = data;
+
+  // Build breadcrumbs
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: PLACEHOLDER.catalogTitle as string, href: '/catalog' },
+  ];
+
+  if (category) {
+    breadcrumbItems.push({ 
+      label: category.name as string, 
+      href: `/catalog?category=${category.slug}` 
+    });
+  }
+
+  breadcrumbItems.push({ label: product.name as string });
+
+  return (
+    <main className="min-h-screen relative z-10">
+      <div className="container mx-auto px-4 py-8">
+        <Breadcrumbs items={breadcrumbItems} />
+
+        <Suspense fallback={<PageLoader text="Завантаження товару..." />}>
+          <ProductContent slug={productSlug} />
+        </Suspense>
+      </div>
+    </main>
+  );
+}

@@ -1,0 +1,12 @@
+export { HeroSection } from './HeroSection';
+export { AdvantagesSection } from './AdvantagesSection';
+export { CategoriesPreview } from './CategoriesPreview';
+export { FeaturedProducts } from './FeaturedProducts';
+export { AboutPreview } from './AboutPreview';
+export { TargetAudience } from './TargetAudience';
+export { ReviewsSection } from './ReviewsSection';
+export { ContactFormSection } from './ContactFormSection';
+export { StatsSection } from './StatsSection';
+export { MarqueeStrip } from './MarqueeStrip';
+export { WhyTranscarpathia } from './WhyTranscarpathia';
+export { OrderCalculator } from './OrderCalculator';

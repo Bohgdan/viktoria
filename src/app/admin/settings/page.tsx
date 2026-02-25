@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Save, Loader2, Phone, Mail, MapPin, Clock, Globe, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Save, Loader2, Phone, Mail, MapPin, Clock, Globe, AlertCircle, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Settings {
@@ -33,34 +33,80 @@ const DEFAULT_SETTINGS: Settings = {
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaved, setIsSaved] = useState(false);
+
+  // Load settings from database on mount
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const response = await fetch('/api/admin/settings');
+        if (response.ok) {
+          const data = await response.json();
+          // Merge loaded settings with defaults
+          setSettings(prev => ({ ...prev, ...data }));
+        }
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadSettings();
+  }, []);
 
   async function handleSave() {
     setIsSaving(true);
-    // In a real application, this would save to the database
-    // For now, settings are managed via constants.ts
-    setTimeout(() => {
+    setIsSaved(false);
+    try {
+      const response = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      });
+      
+      if (response.ok) {
+        toast.success('Налаштування збережено в базу даних');
+        setIsSaved(true);
+        setTimeout(() => setIsSaved(false), 3000);
+      } else {
+        throw new Error('Failed to save');
+      }
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error('Помилка збереження налаштувань');
+    } finally {
       setIsSaving(false);
-      toast.success('Налаштування збережено');
-    }, 500);
+    }
   }
 
   const updateSetting = (key: keyof Settings, value: string) => {
     setSettings(prev => ({ ...prev, [key]: value }));
+    setIsSaved(false);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-[var(--color-accent)]" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-3xl">
-      {/* Note */}
-      <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 flex items-start gap-3">
-        <AlertCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
-        <div>
-          <p className="font-medium text-blue-400">Інформація</p>
-          <p className="text-sm text-blue-400/70">
-            Налаштування зберігаються локально. Для зміни контактних даних на сайті 
-            відредагуйте файл src/lib/constants.ts
-          </p>
+      {/* Success indicator */}
+      {isSaved && (
+        <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 flex items-start gap-3">
+          <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-green-400">Збережено</p>
+            <p className="text-sm text-green-400/70">
+              Налаштування успішно збережені в базі даних PostgreSQL
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Header */}
       <div className="flex items-center justify-between">

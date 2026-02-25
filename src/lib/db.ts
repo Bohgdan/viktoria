@@ -376,6 +376,42 @@ export const db = {
     `, [limit]);
     return result.rows;
   },
+
+  // Site Settings
+  async getSettings() {
+    const result = await query('SELECT key, value FROM site_settings');
+    const settings: Record<string, unknown> = {};
+    for (const row of result.rows) {
+      settings[row.key] = row.value;
+    }
+    return settings;
+  },
+
+  async saveSettings(settings: Record<string, unknown>) {
+    for (const [key, value] of Object.entries(settings)) {
+      await query(
+        `INSERT INTO site_settings (key, value, updated_at) 
+         VALUES ($1, $2, now()) 
+         ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = now()`,
+        [key, JSON.stringify(value)]
+      );
+    }
+    return settings;
+  },
+
+  async getSetting(key: string) {
+    const result = await query('SELECT value FROM site_settings WHERE key = $1', [key]);
+    return result.rows[0]?.value || null;
+  },
+
+  async setSetting(key: string, value: unknown) {
+    await query(
+      `INSERT INTO site_settings (key, value, updated_at) 
+       VALUES ($1, $2, now()) 
+       ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = now()`,
+      [key, JSON.stringify(value)]
+    );
+  },
 };
 
 export default db;

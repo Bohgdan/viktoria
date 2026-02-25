@@ -27,13 +27,13 @@ export const db = {
 
   // Categories
   async getCategories() {
-    const result = await query('SELECT * FROM categories WHERE is_active = true ORDER BY sort_order');
+    const result = await query('SELECT *, is_active as is_visible FROM categories WHERE is_active = true ORDER BY sort_order');
     return result.rows;
   },
 
   async getCategoryBySlug(slug: string) {
     const result = await query(
-      'SELECT * FROM categories WHERE slug = $1 AND is_active = true',
+      'SELECT *, is_active as is_visible FROM categories WHERE slug = $1 AND is_active = true',
       [slug]
     );
     return result.rows[0] || null;
@@ -41,7 +41,7 @@ export const db = {
 
   async getCategoryById(id: string) {
     const result = await query(
-      'SELECT * FROM categories WHERE id = $1',
+      'SELECT *, is_active as is_visible FROM categories WHERE id = $1',
       [id]
     );
     return result.rows[0] || null;
@@ -74,7 +74,7 @@ export const db = {
 
   // Products
   async getProducts(options?: { categoryId?: string; subcategoryId?: string; featured?: boolean; limit?: number }) {
-    let queryText = 'SELECT *, is_featured as featured FROM products WHERE is_active = true';
+    let queryText = 'SELECT *, is_featured as featured, is_active as is_visible FROM products WHERE is_active = true';
     const params: (string | number | boolean)[] = [];
     let paramIndex = 1;
 
@@ -101,21 +101,22 @@ export const db = {
 
   async getProductBySlug(slug: string) {
     const result = await query(
-      'SELECT *, is_featured as featured FROM products WHERE slug = $1 AND is_active = true',
+      'SELECT *, is_featured as featured, is_active as is_visible FROM products WHERE slug = $1 AND is_active = true',
       [slug]
     );
     return result.rows[0] || null;
   },
 
   async getProductById(id: string) {
-    const result = await query('SELECT *, is_featured as featured FROM products WHERE id = $1', [id]);
+    const result = await query('SELECT *, is_featured as featured, is_active as is_visible FROM products WHERE id = $1', [id]);
     return result.rows[0] || null;
   },
 
   // Reviews
   async getApprovedReviews() {
     const result = await query(
-      'SELECT * FROM reviews WHERE is_approved = true ORDER BY created_at DESC'
+      `SELECT id, author_name, author_company as company, content as text, rating, is_visible, sort_order, created_at 
+       FROM reviews WHERE is_approved = true AND is_visible = true ORDER BY sort_order, created_at DESC`
     );
     return result.rows;
   },
@@ -173,6 +174,7 @@ export const db = {
     const result = await query(`
       SELECT p.*, 
              p.is_featured as featured,
+             p.is_active as is_visible,
              c.name as category_name, 
              s.name as subcategory_name
       FROM products p
@@ -212,7 +214,7 @@ export const db = {
   },
 
   async getAllCategories() {
-    const result = await query('SELECT * FROM categories ORDER BY sort_order');
+    const result = await query('SELECT *, is_active as is_visible FROM categories ORDER BY sort_order');
     return result.rows;
   },
 

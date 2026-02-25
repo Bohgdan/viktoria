@@ -18,12 +18,20 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function Home() {
-  // Fetch data from database
-  const [categories, featuredProducts, reviews] = await Promise.all([
-    db.getCategories(),
-    db.getProducts({ featured: true, limit: 4 }),
-    db.getApprovedReviews(),
-  ]);
+  // Fetch data from database with fallback to empty arrays
+  let categories: Awaited<ReturnType<typeof db.getCategories>> = [];
+  let featuredProducts: Awaited<ReturnType<typeof db.getProducts>> = [];
+  let reviews: Awaited<ReturnType<typeof db.getApprovedReviews>> = [];
+
+  try {
+    [categories, featuredProducts, reviews] = await Promise.all([
+      db.getCategories(),
+      db.getProducts({ featured: true, limit: 4 }),
+      db.getApprovedReviews(),
+    ]);
+  } catch (error) {
+    console.error('Failed to fetch home page data:', error);
+  }
 
   return (
     <>

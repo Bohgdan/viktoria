@@ -2,10 +2,13 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { PLACEHOLDER } from '@/lib/constants';
-import { getProductBySlug, getRelatedProducts, CATEGORIES } from '@/lib/data';
+import db from '@/lib/db';
 import { Breadcrumbs, ProductDetail, ProductGrid } from '@/components/catalog';
 import { PageLoader } from '@/components/ui';
-import type { BreadcrumbItem } from '@/lib/types';
+import type { BreadcrumbItem, Product, Category } from '@/lib/types';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 interface ProductPageProps {
   params: Promise<{
@@ -13,15 +16,21 @@ interface ProductPageProps {
   }>;
 }
 
-function getProductData(slug: string) {
-  const product = getProductBySlug(slug);
+async function getProductData(slug: string) {
+  const product = await db.getProductBySlug(slug);
   
   if (!product) {
     return null;
   }
 
-  const category = CATEGORIES.find(c => c.id === product.category_id);
-  const relatedProducts = getRelatedProducts(product.id, product.category_id || '', 4);
+  const category = product.category_id ? await db.getCategoryById(product.category_id) : null;
+  
+  // Get related products from same category (excluding current product)
+  const allCategoryProducts = product.category_id 
+    ? await db.getProducts({ categoryId: product.category_id, limit: 5 })
+    : [];
+  
+  const relatedProducts = allCategoryProducts.filter((p: Product) => p.id !== product.id).slice(0, 4);
 
   return {
     product,
@@ -32,7 +41,7 @@ function getProductData(slug: string) {
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { productSlug } = await params;
-  const data = getProductData(productSlug);
+  const data = await getProductData(productSlug);
   
   if (!data) {
     return {
@@ -46,8 +55,8 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   };
 }
 
-function ProductContent({ slug }: { slug: string }) {
-  const data = getProductData(slug);
+async function ProductContent({ slug }: { slug: string }) {
+  const data = await getProductData(slug);
   
   if (!data) {
     notFound();
@@ -77,7 +86,7 @@ function ProductContent({ slug }: { slug: string }) {
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { productSlug } = await params;
-  const data = getProductData(productSlug);
+  const data = await getProductData(productSlug);
   
   if (!data) {
     notFound();
@@ -93,7 +102,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   if (category) {
     breadcrumbItems.push({ 
       label: category.name as string, 
-      href: `/catalog?category=${category.slug}` 
+      href: `/catalog/${category.slug}` 
     });
   }
 

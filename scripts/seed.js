@@ -7,71 +7,65 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// Categories data
+// Categories data (7 categories as specified)
 const categories = [
-  { name: 'Спеції', slug: 'spetsiyi', description: 'Перець, паприка та інші спеції', sort_order: 1 },
-  { name: 'Приправи', slug: 'pripravy', description: 'Універсальні приправи та бакалія', sort_order: 2 },
-  { name: 'Овочеве асорті', slug: 'ovocheve-asorti', description: 'Овочеве асорті без солі та ароматизаторів', sort_order: 3 },
-  { name: 'Макарони', slug: 'makarony', description: 'Макаронні вироби різних форм', sort_order: 4 },
-  { name: 'Консервація', slug: 'konservatsiya', description: 'Консервовані овочі та томатна продукція', sort_order: 5 },
-  { name: 'Олія', slug: 'oliya', description: 'Соняшникова олія високої якості', sort_order: 6 },
+  { name: 'Спеції', slug: 'spetsii', description: 'Паприка, перець та суміші спецій', sort_order: 1 },
+  { name: 'Приправи', slug: 'prypravy', description: 'Універсальні приправи, Вігета та Гурманік', sort_order: 2 },
+  { name: 'Овочеве асорті', slug: 'ovocheve-asorti', description: 'Асорті без солі, часник, зелень', sort_order: 3 },
+  { name: 'Макаронні вироби', slug: 'makaronni-vyroby', description: 'Рожки, спіраль, вермішель та інші', sort_order: 4 },
+  { name: 'Консервація', slug: 'konservatsiia', description: 'Кукурудза, горошок, огірки, томати', sort_order: 5 },
+  { name: 'Олія та жири', slug: 'oliia-ta-zhyry', description: 'Соняшникова олія', sort_order: 6 },
+  { name: 'Бакалія', slug: 'bakaliia', description: 'Сода, лимонна кислота', sort_order: 7 },
 ];
 
-// Products data (no prices as requested)
-const products = [
-  // СПЕЦІЇ
-  { name: 'Перець чорний ГОРОШОК Преміум 200г', slug: 'perets-chornyi-goroshok-premium-200g', description: 'Перець чорний горошок преміум якість. Фасування 200г, 15шт в ящику.', category_slug: 'spetsiyi', unit: 'шт', featured: true },
-  { name: 'Перець чорний МЕЛЕНИЙ Преміум 200г', slug: 'perets-chornyi-melenyi-premium-200g', description: 'Перець чорний мелений преміум якість. Фасування 200г, 15шт в ящику.', category_slug: 'spetsiyi', unit: 'шт', featured: false },
-  { name: 'Перець чорний МЕЛЕНИЙ 1 ґатунок 200г', slug: 'perets-chornyi-melenyi-1gat-200g', description: 'Перець чорний мелений 1 ґатунок. Фасування 200г, 15шт в ящику.', category_slug: 'spetsiyi', unit: 'шт', featured: false },
-  { name: 'Паприка червона 200г', slug: 'papryka-chervona-200g', description: 'Паприка червона солодка мелена. Фасування 200г, 15шт в ящику.', category_slug: 'spetsiyi', unit: 'шт', featured: true },
-  { name: 'Паприка червона 100г', slug: 'papryka-chervona-100g', description: 'Паприка червона солодка мелена. Фасування 100г, 40шт в ящику.', category_slug: 'spetsiyi', unit: 'шт', featured: false },
-  { name: 'Паприка КОПЧЕНА 200г', slug: 'papryka-kopchena-200g', description: 'Паприка червона копчена мелена. Фасування 200г, 20шт в ящику.', category_slug: 'spetsiyi', unit: 'шт', featured: true },
-  { name: 'Паприка КОПЧЕНА 50г', slug: 'papryka-kopchena-50g', description: 'Паприка червона копчена мелена. Фасування 50г, 70шт в ящику.', category_slug: 'spetsiyi', unit: 'шт', featured: false },
-  { name: 'Паприка ЧІЛІ гостра 50г', slug: 'papryka-chili-50g', description: 'Паприка чілі гостра мелена. Фасування 50г, 70шт в ящику.', category_slug: 'spetsiyi', unit: 'шт', featured: false },
-  { name: 'Приправа Домашня з копченою паприкою 300г', slug: 'pryprava-domashnya-kopchena-300g', description: 'Набір приправ Домашня з копченою паприкою. Фасування 300г, 15шт в ящику.', category_slug: 'spetsiyi', unit: 'шт', featured: false },
-
-  // ПРИПРАВИ
-  { name: 'Приправа Універсальна 5кг (відро)', slug: 'pryprava-universalna-5kg-vidro', description: 'Універсальний набір приправ у пластиковому відрі. Фасування 5кг.', category_slug: 'pripravy', unit: 'шт', featured: true },
-  { name: 'Приправа Універсальна 1кг (відро)', slug: 'pryprava-universalna-1kg-vidro', description: 'Універсальний набір приправ у відрі. Фасування 1кг, 6шт в ящику.', category_slug: 'pripravy', unit: 'шт', featured: false },
-  { name: 'Приправа Універсальна 1кг (банка)', slug: 'pryprava-universalna-1kg-banka', description: 'Універсальний набір приправ у банці. Фасування 1кг, 12шт в ящику.', category_slug: 'pripravy', unit: 'шт', featured: false },
-  { name: 'Приправа Універсальна 600г (банка)', slug: 'pryprava-universalna-600g', description: 'Універсальний набір приправ у банці. Фасування 600г, 12шт в ящику.', category_slug: 'pripravy', unit: 'шт', featured: false },
-  { name: 'Приправа Універсальна 450г (банка)', slug: 'pryprava-universalna-450g', description: 'Універсальний набір приправ у банці. Фасування 450г, 15шт в ящику.', category_slug: 'pripravy', unit: 'шт', featured: true },
-  { name: 'Приправа Універсальна ПАЧКА 1кг', slug: 'pryprava-universalna-1kg-pachka', description: 'Універсальний набір приправ у пачці. Фасування 1кг, 12шт в ящику.', category_slug: 'pripravy', unit: 'шт', featured: false },
-  { name: 'Приправа Універсальна ПАЧКА 250г', slug: 'pryprava-universalna-250g-pachka', description: 'Універсальний набір приправ у пачці. Фасування 250г, 40шт в ящику.', category_slug: 'pripravy', unit: 'шт', featured: false },
-  { name: 'Гурманік для бульйонів та соусів 500г', slug: 'gurmanik-500g', description: 'Приправа для бульйонів та соусів. Фасування 500г, 12шт в ящику.', category_slug: 'pripravy', unit: 'шт', featured: true },
-  { name: 'Вігета 200г', slug: 'vigeta-200g', description: 'Приправа Вігета універсальна. Фасування 200г, 25шт в ящику.', category_slug: 'pripravy', unit: 'шт', featured: false },
-  { name: 'Лимонна кислота 350г', slug: 'lymonna-kyslota-350g', description: 'Лимонна кислота харчова. Фасування 350г, 15шт в ящику.', category_slug: 'pripravy', unit: 'шт', featured: false },
-  { name: 'Сода харчова 300г', slug: 'soda-300g', description: 'Сода харчова. Фасування 300г, 40шт в ящику.', category_slug: 'pripravy', unit: 'шт', featured: false },
-
-  // ОВОЧЕВЕ АСОРТІ
-  { name: 'Асорті овочеве 300г (банка)', slug: 'asorti-300g-banka', description: 'Овочеве асорті без солі та ароматизаторів у банці. Фасування 300г.', category_slug: 'ovocheve-asorti', unit: 'шт', featured: true },
-  { name: 'Асорті овочеве 500г', slug: 'asorti-500g', description: 'Овочеве асорті без солі та ароматизаторів. Фасування 500г.', category_slug: 'ovocheve-asorti', unit: 'шт', featured: false },
-  { name: 'Асорті овочеве 500г Бомба', slug: 'asorti-500g-bomba', description: 'Овочеве асорті Бомба преміум класу. Фасування 500г.', category_slug: 'ovocheve-asorti', unit: 'шт', featured: true },
-  { name: 'Асорті овочеве 1кг (відро)', slug: 'asorti-1kg-vidro', description: 'Овочеве асорті у відрі без солі. Фасування 1кг.', category_slug: 'ovocheve-asorti', unit: 'шт', featured: false },
-
-  // МАКАРОНИ
-  { name: 'Макарони "Черепашка" 5кг (мішок)', slug: 'makarony-cherepashka-5kg', description: 'Макарони черепашка вищого сорту. Фасування 5кг.', category_slug: 'makarony', unit: 'шт', featured: true },
-  { name: 'Макарони "Ріжки" 5кг (мішок)', slug: 'makarony-rizhky-5kg', description: 'Макарони ріжки вищого сорту. Фасування 5кг.', category_slug: 'makarony', unit: 'шт', featured: false },
-  { name: 'Макарони "Спіраль" 5кг (мішок)', slug: 'makarony-spiral-5kg', description: 'Макарони спіраль вищого сорту. Фасування 5кг.', category_slug: 'makarony', unit: 'шт', featured: false },
-  { name: 'Макарони "Пір\'ячко" 5кг (мішок)', slug: 'makarony-piryachko-5kg', description: 'Макарони пір\'ячко вищого сорту. Фасування 5кг.', category_slug: 'makarony', unit: 'шт', featured: true },
-  { name: 'Макарони "Ріжки" 800г (пачка)', slug: 'makarony-rizhky-800g', description: 'Макарони ріжки у пачці. Фасування 800г, 20шт в ящику.', category_slug: 'makarony', unit: 'шт', featured: false },
-  { name: 'Макарони "Спіраль" 800г (пачка)', slug: 'makarony-spiral-800g', description: 'Макарони спіраль у пачці. Фасування 800г, 20шт в ящику.', category_slug: 'makarony', unit: 'шт', featured: false },
-  { name: 'Макарони "Ріжки" 400г (пачка)', slug: 'makarony-rizhky-400g', description: 'Макарони ріжки у пачці. Фасування 400г, 30шт в ящику.', category_slug: 'makarony', unit: 'шт', featured: false },
-  { name: 'Вермішель 800г', slug: 'vermishel-800g', description: 'Вермішель тонка. Фасування 800г, 15шт в ящику.', category_slug: 'makarony', unit: 'шт', featured: false },
-
-  // КОНСЕРВАЦІЯ
-  { name: 'Томатна паста 25% 500г (банка)', slug: 'tomatna-pasta-25-500g', description: 'Томатна паста 25% у скляній банці. Фасування 500г.', category_slug: 'konservatsiya', unit: 'шт', featured: true },
-  { name: 'Томатна паста 25% 400г (банка)', slug: 'tomatna-pasta-25-400g', description: 'Томатна паста 25% у скляній банці. Фасування 400г.', category_slug: 'konservatsiya', unit: 'шт', featured: false },
-  { name: 'Томатна паста 25% 700г (банка)', slug: 'tomatna-pasta-25-700g', description: 'Томатна паста 25% у скляній банці. Фасування 700г.', category_slug: 'konservatsiya', unit: 'шт', featured: true },
-  { name: 'Горошок консервований 425г', slug: 'goroshok-425g', description: 'Горошок зелений консервований. Фасування 425г.', category_slug: 'konservatsiya', unit: 'шт', featured: false },
-  { name: 'Кукурудза консервована 425г', slug: 'kukurudza-425g', description: 'Кукурудза цукрова консервована. Фасування 425г.', category_slug: 'konservatsiya', unit: 'шт', featured: false },
-  { name: 'Фасоля консервована 425г', slug: 'fasolya-425g', description: 'Фасоля червона консервована. Фасування 425г.', category_slug: 'konservatsiya', unit: 'шт', featured: false },
-
-  // ОЛІЯ
-  { name: 'Олія соняшникова рафінована 5л', slug: 'oliya-rafinovana-5l', description: 'Олія соняшникова рафінована дезодорована. Фасування 5л.', category_slug: 'oliya', unit: 'шт', featured: true },
-  { name: 'Олія соняшникова рафінована 3л', slug: 'oliya-rafinovana-3l', description: 'Олія соняшникова рафінована дезодорована. Фасування 3л.', category_slug: 'oliya', unit: 'шт', featured: false },
-  { name: 'Олія соняшникова рафінована 1л', slug: 'oliya-rafinovana-1l', description: 'Олія соняшникова рафінована дезодорована. Фасування 1л.', category_slug: 'oliya', unit: 'шт', featured: false },
-  { name: 'Олія соняшникова нерафінована 900мл', slug: 'oliya-nerafinovana-900ml', description: 'Олія соняшникова нерафінована домашня. Фасування 900мл.', category_slug: 'oliya', unit: 'шт', featured: true },
+// Subcategories data (linked by category_slug)
+const subcategories = [
+  // Спеції
+  { name: 'Паприка', slug: 'papryka', category_slug: 'spetsii', sort_order: 1 },
+  { name: 'Перець', slug: 'perets', category_slug: 'spetsii', sort_order: 2 },
+  { name: 'Суміші спецій', slug: 'sumishi-spetsij', category_slug: 'spetsii', sort_order: 3 },
+  
+  // Приправи
+  { name: 'Універсальна приправа', slug: 'universalna', category_slug: 'prypravy', sort_order: 1 },
+  { name: 'Вігета та Гурманік', slug: 'vigeta-gurmanik', category_slug: 'prypravy', sort_order: 2 },
+  
+  // Овочеве асорті
+  { name: 'Асорті без солі', slug: 'asorti-bez-soli', category_slug: 'ovocheve-asorti', sort_order: 1 },
+  { name: 'Спеції для страв', slug: 'spetsii-dlya-strav', category_slug: 'ovocheve-asorti', sort_order: 2 },
+  { name: 'Часник', slug: 'chasnyk', category_slug: 'ovocheve-asorti', sort_order: 3 },
+  { name: 'Суміш зелені', slug: 'sumish-zeleni', category_slug: 'ovocheve-asorti', sort_order: 4 },
+  
+  // Макаронні вироби
+  { name: 'Рожки', slug: 'rozhky', category_slug: 'makaronni-vyroby', sort_order: 1 },
+  { name: 'Спіраль', slug: 'spiral', category_slug: 'makaronni-vyroby', sort_order: 2 },
+  { name: 'Галушка', slug: 'galushka', category_slug: 'makaronni-vyroby', sort_order: 3 },
+  { name: 'Лапша', slug: 'lapsha', category_slug: 'makaronni-vyroby', sort_order: 4 },
+  { name: 'Вермішель', slug: 'vermishel', category_slug: 'makaronni-vyroby', sort_order: 5 },
+  { name: 'Перо', slug: 'pero', category_slug: 'makaronni-vyroby', sort_order: 6 },
+  { name: 'Трубочка', slug: 'trubochka', category_slug: 'makaronni-vyroby', sort_order: 7 },
+  { name: 'Кільця', slug: 'kiltsia', category_slug: 'makaronni-vyroby', sort_order: 8 },
+  { name: 'Зірочка', slug: 'zirochka', category_slug: 'makaronni-vyroby', sort_order: 9 },
+  { name: 'Ракушка', slug: 'rakushka', category_slug: 'makaronni-vyroby', sort_order: 10 },
+  { name: 'Паутинка', slug: 'pautynka', category_slug: 'makaronni-vyroby', sort_order: 11 },
+  { name: 'Косичка', slug: 'kosychka', category_slug: 'makaronni-vyroby', sort_order: 12 },
+  { name: 'Локшина', slug: 'lokshyna', category_slug: 'makaronni-vyroby', sort_order: 13 },
+  { name: 'Чіга', slug: 'chiga', category_slug: 'makaronni-vyroby', sort_order: 14 },
+  { name: 'Коцка', slug: 'kotsna', category_slug: 'makaronni-vyroby', sort_order: 15 },
+  { name: 'Торгоня', slug: 'torgonya', category_slug: 'makaronni-vyroby', sort_order: 16 },
+  
+  // Консервація
+  { name: 'Кукурудза', slug: 'kukurudza', category_slug: 'konservatsiia', sort_order: 1 },
+  { name: 'Горошок', slug: 'goroshok', category_slug: 'konservatsiia', sort_order: 2 },
+  { name: 'Огірки', slug: 'ogirky', category_slug: 'konservatsiia', sort_order: 3 },
+  { name: 'Томати', slug: 'tomaty', category_slug: 'konservatsiia', sort_order: 4 },
+  { name: 'Квасоля', slug: 'kvasolya', category_slug: 'konservatsiia', sort_order: 5 },
+  
+  // Олія та жири
+  { name: 'Олія соняшникова', slug: 'oliia-soniashnikova', category_slug: 'oliia-ta-zhyry', sort_order: 1 },
+  
+  // Бакалія
+  { name: 'Сода', slug: 'soda', category_slug: 'bakaliia', sort_order: 1 },
+  { name: 'Лимонна кислота', slug: 'lymonna-kyslota', category_slug: 'bakaliia', sort_order: 2 },
 ];
 
 // Reviews data
@@ -81,19 +75,43 @@ const reviews = [
   { author_name: 'Наталія П.', company: 'ФОП Наталія', text: 'Працюємо з Perfect 4 you вже півроку. Завжди все в наявності.', rating: 5 },
 ];
 
+// Site settings
+const siteSettings = [
+  { key: 'company_name', value: 'Perfect 4 You' },
+  { key: 'phone', value: '+380 97 123 45 67' },
+  { key: 'email', value: 'info@perfect4you.com.ua' },
+  { key: 'address', value: 'м. Київ, Україна' },
+  { key: 'work_hours', value: 'Пн-Пт: 9:00-18:00, Сб: 10:00-15:00' },
+  { key: 'viber', value: 'viber://chat?number=%2B380971234567' },
+  { key: 'telegram', value: 'https://t.me/perfect4you' },
+  { key: 'whatsapp', value: 'https://wa.me/380971234567' },
+  { key: 'hero_title', value: 'Оптовий постачальник продуктів харчування' },
+  { key: 'hero_subtitle', value: 'Спеції, приправи, макарони та консервація для вашого бізнесу' },
+  { key: 'about_text', value: 'Perfect 4 You - надійний партнер для вашого бізнесу. Ми пропонуємо широкий асортимент якісних продуктів за оптовими цінами.' },
+];
+
 async function seed() {
   const client = await pool.connect();
   
   try {
-    console.log('🌱 Starting database seed...\n');
+    console.log('Starting database seed...\n');
 
-    // Clear existing data
+    // Clear existing data (in correct order due to foreign keys)
     console.log('Clearing existing data...');
-    await client.query('DELETE FROM products');
-    await client.query('DELETE FROM subcategories');
-    await client.query('DELETE FROM categories');
-    await client.query('DELETE FROM reviews');
-    console.log('✅ Existing data cleared\n');
+    await client.query('TRUNCATE products, subcategories, categories, reviews CASCADE');
+    console.log('Existing data cleared\n');
+
+    // Create site_settings table if not exists
+    console.log('Creating site_settings table...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS site_settings (
+        key VARCHAR(100) PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `);
+    await client.query('DELETE FROM site_settings');
+    console.log('site_settings table ready\n');
 
     // Insert categories
     console.log('Inserting categories...');
@@ -105,21 +123,25 @@ async function seed() {
         [cat.name, cat.slug, cat.description, cat.sort_order]
       );
       categoryIds[cat.slug] = result.rows[0].id;
-      console.log(`  ✓ ${cat.name}`);
+      console.log(`  + ${cat.name}`);
     }
-    console.log(`✅ ${categories.length} categories inserted\n`);
+    console.log(`${categories.length} categories inserted\n`);
 
-    // Insert products
-    console.log('Inserting products...');
-    let sortOrder = 1;
-    for (const prod of products) {
+    // Insert subcategories
+    console.log('Inserting subcategories...');
+    for (const sub of subcategories) {
+      const categoryId = categoryIds[sub.category_slug];
+      if (!categoryId) {
+        console.log(`  ! Skipping ${sub.name} - category ${sub.category_slug} not found`);
+        continue;
+      }
       await client.query(
-        `INSERT INTO products (name, slug, description, category_id, unit, featured, is_visible, in_stock, sort_order) 
-         VALUES ($1, $2, $3, $4, $5, $6, true, true, $7)`,
-        [prod.name, prod.slug, prod.description, categoryIds[prod.category_slug], prod.unit, prod.featured, sortOrder++]
+        `INSERT INTO subcategories (category_id, name, slug, sort_order, is_active) 
+         VALUES ($1, $2, $3, $4, true)`,
+        [categoryId, sub.name, sub.slug, sub.sort_order]
       );
     }
-    console.log(`✅ ${products.length} products inserted\n`);
+    console.log(`${subcategories.length} subcategories inserted\n`);
 
     // Insert reviews
     console.log('Inserting reviews...');
@@ -130,23 +152,39 @@ async function seed() {
          VALUES ($1, $2, $3, $4, true, $5)`,
         [rev.author_name, rev.company, rev.text, rev.rating, reviewOrder++]
       );
-      console.log(`  ✓ ${rev.author_name}`);
+      console.log(`  + ${rev.author_name}`);
     }
-    console.log(`✅ ${reviews.length} reviews inserted\n`);
+    console.log(`${reviews.length} reviews inserted\n`);
+
+    // Insert site settings
+    console.log('Inserting site settings...');
+    for (const setting of siteSettings) {
+      await client.query(
+        `INSERT INTO site_settings (key, value) VALUES ($1, $2)
+         ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()`,
+        [setting.key, setting.value]
+      );
+    }
+    console.log(`${siteSettings.length} settings inserted\n`);
 
     // Show summary
     const catCount = await client.query('SELECT COUNT(*) FROM categories');
+    const subCount = await client.query('SELECT COUNT(*) FROM subcategories');
     const prodCount = await client.query('SELECT COUNT(*) FROM products');
     const revCount = await client.query('SELECT COUNT(*) FROM reviews');
+    const settingsCount = await client.query('SELECT COUNT(*) FROM site_settings');
     
-    console.log('📊 Database Summary:');
+    console.log('Database Summary:');
     console.log(`   Categories: ${catCount.rows[0].count}`);
-    console.log(`   Products: ${prodCount.rows[0].count}`);
+    console.log(`   Subcategories: ${subCount.rows[0].count}`);
+    console.log(`   Products: ${prodCount.rows[0].count} (empty - add via admin)`);
     console.log(`   Reviews: ${revCount.rows[0].count}`);
-    console.log('\n🎉 Seed completed successfully!');
+    console.log(`   Settings: ${settingsCount.rows[0].count}`);
+    console.log('\nSeed completed successfully!');
     
   } catch (error) {
-    console.error('❌ Seed failed:', error.message);
+    console.error('Seed failed:', error.message);
+    console.error(error.stack);
     throw error;
   } finally {
     client.release();

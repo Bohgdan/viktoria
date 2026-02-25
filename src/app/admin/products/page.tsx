@@ -11,11 +11,12 @@ interface Product {
   description: string | null;
   price: number | null;
   unit: string;
-  min_order: number;
+  min_order_qty: number;
   image_url: string | null;
-  is_available: boolean;
-  is_popular: boolean;
+  in_stock: boolean;
+  featured: boolean;
   subcategory_id: string;
+  category_id?: string;
   category_name?: string;
   subcategory_name?: string;
 }
@@ -23,6 +24,7 @@ interface Product {
 interface Subcategory {
   id: string;
   name: string;
+  category_id: string;
   category_name?: string;
 }
 
@@ -40,10 +42,11 @@ export default function AdminProductsPage() {
     description: '',
     price: '',
     unit: 'кг',
-    min_order: '1',
+    min_order_qty: '1',
     subcategory_id: '',
-    is_available: true,
-    is_popular: false,
+    image_url: '',
+    in_stock: true,
+    is_featured: false,
   });
 
   useEffect(() => {
@@ -84,10 +87,11 @@ export default function AdminProductsPage() {
       description: '',
       price: '',
       unit: 'кг',
-      min_order: '1',
+      min_order_qty: '1',
       subcategory_id: subcategories[0]?.id || '',
-      is_available: true,
-      is_popular: false,
+      image_url: '',
+      in_stock: true,
+      is_featured: false,
     });
     setIsModalOpen(true);
   }
@@ -99,17 +103,18 @@ export default function AdminProductsPage() {
       description: product.description || '',
       price: product.price?.toString() || '',
       unit: product.unit,
-      min_order: product.min_order.toString(),
-      subcategory_id: product.subcategory_id,
-      is_available: product.is_available,
-      is_popular: product.is_popular,
+      min_order_qty: product.min_order_qty.toString(),
+      subcategory_id: product.subcategory_id || '',
+      image_url: product.image_url || '',
+      in_stock: product.in_stock,
+      is_featured: product.featured,
     });
     setIsModalOpen(true);
   }
 
   async function handleSave() {
-    if (!formData.name || !formData.subcategory_id) {
-      toast.error('Заповніть обов\'язкові поля');
+    if (!formData.name) {
+      toast.error('Введіть назву товару');
       return;
     }
 
@@ -121,16 +126,22 @@ export default function AdminProductsPage() {
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-');
 
+      // Get category_id from selected subcategory
+      const selectedSubcategory = subcategories.find(s => s.id === formData.subcategory_id);
+      const categoryId = selectedSubcategory?.category_id || null;
+
       const productData = {
         name: formData.name,
         slug,
         description: formData.description || null,
         price: formData.price ? parseFloat(formData.price) : null,
         unit: formData.unit,
-        min_order: parseInt(formData.min_order) || 1,
-        subcategory_id: formData.subcategory_id,
-        is_available: formData.is_available,
-        is_popular: formData.is_popular,
+        min_order_qty: parseInt(formData.min_order_qty) || 1,
+        category_id: categoryId,
+        subcategory_id: formData.subcategory_id || null,
+        image_url: formData.image_url || null,
+        in_stock: formData.in_stock,
+        featured: formData.is_featured,
       };
 
       if (editingProduct) {
@@ -267,11 +278,11 @@ export default function AdminProductsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                        product.is_available
+                        product.in_stock
                           ? 'bg-green-500/20 text-green-400'
                           : 'bg-red-500/20 text-red-400'
                       }`}>
-                        {product.is_available ? 'В наявності' : 'Немає'}
+                        {product.in_stock ? 'В наявності' : 'Немає'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -405,20 +416,34 @@ export default function AdminProductsPage() {
                   </label>
                   <input
                     type="number"
-                    value={formData.min_order}
-                    onChange={(e) => setFormData(prev => ({ ...prev, min_order: e.target.value }))}
+                    value={formData.min_order_qty}
+                    onChange={(e) => setFormData(prev => ({ ...prev, min_order_qty: e.target.value }))}
                     className="w-full px-3 py-2 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)]"
                     placeholder="1"
                   />
                 </div>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
+                  URL зображення
+                </label>
+                <input
+                  type="url"
+                  value={formData.image_url}
+                  onChange={(e) => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
+                  className="w-full px-3 py-2 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)]"
+                  placeholder="https://example.com/image.jpg"
+                />
+                <p className="text-xs text-[var(--color-text-muted)] mt-1">Пряме посилання на зображення товару</p>
+              </div>
+
               <div className="flex items-center gap-6">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={formData.is_available}
-                    onChange={(e) => setFormData(prev => ({ ...prev, is_available: e.target.checked }))}
+                    checked={formData.in_stock}
+                    onChange={(e) => setFormData(prev => ({ ...prev, in_stock: e.target.checked }))}
                     className="w-4 h-4 accent-[var(--color-accent)]"
                   />
                   <span className="text-sm text-[var(--color-text-secondary)]">В наявності</span>
@@ -426,11 +451,11 @@ export default function AdminProductsPage() {
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={formData.is_popular}
-                    onChange={(e) => setFormData(prev => ({ ...prev, is_popular: e.target.checked }))}
+                    checked={formData.is_featured}
+                    onChange={(e) => setFormData(prev => ({ ...prev, is_featured: e.target.checked }))}
                     className="w-4 h-4 accent-[var(--color-accent)]"
                   />
-                  <span className="text-sm text-[var(--color-text-secondary)]">Популярний</span>
+                  <span className="text-sm text-[var(--color-text-secondary)]">Рекомендований</span>
                 </label>
               </div>
             </div>

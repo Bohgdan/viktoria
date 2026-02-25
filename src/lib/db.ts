@@ -39,6 +39,14 @@ export const db = {
     return result.rows[0] || null;
   },
 
+  async getCategoryById(id: string) {
+    const result = await query(
+      'SELECT * FROM categories WHERE id = $1',
+      [id]
+    );
+    return result.rows[0] || null;
+  },
+
   // Subcategories
   async getSubcategories(categoryId?: string) {
     if (categoryId) {

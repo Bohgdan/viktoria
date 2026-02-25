@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
+const headers = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate',
+};
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -9,12 +15,12 @@ export async function PUT(
     const { id } = await params;
     const { type, status } = await request.json();
     await db.updateRequestStatus(id, type, status);
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true }, { headers });
   } catch (error) {
     console.error('Update request error:', error);
     return NextResponse.json(
       { error: 'Помилка оновлення заявки' },
-      { status: 500 }
+      { status: 500, headers }
     );
   }
 }
@@ -28,12 +34,12 @@ export async function DELETE(
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type') || 'contact';
     await db.deleteRequest(id, type);
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true }, { headers });
   } catch (error) {
     console.error('Delete request error:', error);
     return NextResponse.json(
       { error: 'Помилка видалення заявки' },
-      { status: 500 }
+      { status: 500, headers }
     );
   }
 }

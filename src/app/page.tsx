@@ -12,21 +12,32 @@ import {
   ReviewsSection,
   ContactFormSection,
 } from '@/components/home';
+import db from '@/lib/db';
 
-export default function Home() {
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+export default async function Home() {
+  // Fetch data from database
+  const [categories, featuredProducts, reviews] = await Promise.all([
+    db.getCategories(),
+    db.getProducts({ featured: true, limit: 4 }),
+    db.getApprovedReviews(),
+  ]);
+
   return (
     <>
       <HeroSection />
       <StatsSection />
       <MarqueeStrip />
-      <CategoriesPreview />
+      <CategoriesPreview categories={categories} />
       <WhyTranscarpathia />
-      <FeaturedProducts />
+      <FeaturedProducts products={featuredProducts} />
       <OrderCalculator />
       <AboutPreview />
       <AdvantagesSection />
       <TargetAudience />
-      <ReviewsSection />
+      <ReviewsSection reviews={reviews} />
       <ContactFormSection />
     </>
   );

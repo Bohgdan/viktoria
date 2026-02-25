@@ -2,9 +2,12 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { PLACEHOLDER } from '@/lib/constants';
-import { getCategoryBySlug, getProductsByCategory } from '@/lib/data';
+import db from '@/lib/db';
 import { Breadcrumbs, ProductGrid } from '@/components/catalog';
 import { GridSkeleton } from '@/components/ui';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 interface CategoryPageProps {
   params: Promise<{
@@ -12,14 +15,14 @@ interface CategoryPageProps {
   }>;
 }
 
-function getCategoryData(slug: string) {
-  const category = getCategoryBySlug(slug);
+async function getCategoryData(slug: string) {
+  const category = await db.getCategoryBySlug(slug);
   
   if (!category) {
     return null;
   }
 
-  const products = getProductsByCategory(category.id);
+  const products = await db.getProducts({ categoryId: category.id });
 
   return {
     category,
@@ -29,7 +32,7 @@ function getCategoryData(slug: string) {
 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   const { categorySlug } = await params;
-  const data = getCategoryData(categorySlug);
+  const data = await getCategoryData(categorySlug);
   
   if (!data) {
     return {
@@ -43,8 +46,8 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   };
 }
 
-function CategoryContent({ slug }: { slug: string }) {
-  const data = getCategoryData(slug);
+async function CategoryContent({ slug }: { slug: string }) {
+  const data = await getCategoryData(slug);
   
   if (!data) {
     notFound();
@@ -66,7 +69,7 @@ function CategoryContent({ slug }: { slug: string }) {
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { categorySlug } = await params;
-  const data = getCategoryData(categorySlug);
+  const data = await getCategoryData(categorySlug);
   
   if (!data) {
     notFound();

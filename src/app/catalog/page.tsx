@@ -1,28 +1,35 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { PLACEHOLDER } from '@/lib/constants';
-import { CATEGORIES, PRODUCTS } from '@/lib/data';
+import db from '@/lib/db';
 import { Breadcrumbs, ProductCard } from '@/components/catalog';
 import { GridSkeleton } from '@/components/ui';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: `${PLACEHOLDER.catalogTitle} | ${PLACEHOLDER.companyName}`,
   description: PLACEHOLDER.catalogDescription,
 };
 
-function getData(categorySlug?: string) {
-  const categories = CATEGORIES;
-  let products = PRODUCTS.filter(p => p.in_stock);
-
+async function getData(categorySlug?: string) {
+  const categories = await db.getCategories();
+  
+  let products;
   if (categorySlug && categorySlug !== 'all') {
-    const category = categories.find(c => c.slug === categorySlug);
+    const category = categories.find((c: { slug: string }) => c.slug === categorySlug);
     if (category) {
-      products = products.filter(p => p.category_id === category.id);
+      products = await db.getProducts({ categoryId: category.id });
+    } else {
+      products = await db.getProducts({});
     }
+  } else {
+    products = await db.getProducts({});
   }
 
   // Sort: featured first, then by sort_order
-  products = products.sort((a, b) => {
+  products = products.sort((a: { featured: boolean; sort_order: number }, b: { featured: boolean; sort_order: number }) => {
     if (a.featured !== b.featured) return a.featured ? -1 : 1;
     return a.sort_order - b.sort_order;
   });
@@ -34,8 +41,8 @@ interface CatalogContentProps {
   categorySlug?: string;
 }
 
-function CatalogContent({ categorySlug }: CatalogContentProps) {
-  const { categories, products } = getData(categorySlug);
+async function CatalogContent({ categorySlug }: CatalogContentProps) {
+  const { categories, products } = await getData(categorySlug);
 
   return (
     <>
@@ -51,7 +58,7 @@ function CatalogContent({ categorySlug }: CatalogContentProps) {
         >
           Всі товари
         </a>
-        {categories.map((category) => (
+        {categories.map((category: { id: string; slug: string; name: string }) => (
           <a
             key={category.id}
             href={`/catalog?category=${category.slug}`}
@@ -69,7 +76,7 @@ function CatalogContent({ categorySlug }: CatalogContentProps) {
       {/* Products Grid */}
       {products.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {products.map((product) => (
+          {products.map((product: { id: string; name: string; slug: string; price: number | null; image_url: string | null; category_id: string | null; in_stock: boolean; featured: boolean; unit: string; description: string | null }) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>

@@ -74,7 +74,7 @@ export const db = {
 
   // Products
   async getProducts(options?: { categoryId?: string; subcategoryId?: string; featured?: boolean; limit?: number }) {
-    let queryText = 'SELECT *, featured as featured FROM products WHERE is_active = true';
+    let queryText = 'SELECT *, is_featured as featured FROM products WHERE is_active = true';
     const params: (string | number | boolean)[] = [];
     let paramIndex = 1;
 
@@ -87,7 +87,7 @@ export const db = {
       params.push(options.subcategoryId);
     }
     if (options?.featured) {
-      queryText += ' AND featured = true';
+      queryText += ' AND is_featured = true';
     }
     queryText += ' ORDER BY sort_order';
     if (options?.limit) {
@@ -101,14 +101,14 @@ export const db = {
 
   async getProductBySlug(slug: string) {
     const result = await query(
-      'SELECT *, featured as featured FROM products WHERE slug = $1 AND is_active = true',
+      'SELECT *, is_featured as featured FROM products WHERE slug = $1 AND is_active = true',
       [slug]
     );
     return result.rows[0] || null;
   },
 
   async getProductById(id: string) {
-    const result = await query('SELECT *, featured as featured FROM products WHERE id = $1', [id]);
+    const result = await query('SELECT *, is_featured as featured FROM products WHERE id = $1', [id]);
     return result.rows[0] || null;
   },
 
@@ -172,7 +172,7 @@ export const db = {
   async getAllProducts() {
     const result = await query(`
       SELECT p.*, 
-             p.featured as featured,
+             p.is_featured as featured,
              c.name as category_name, 
              s.name as subcategory_name
       FROM products p

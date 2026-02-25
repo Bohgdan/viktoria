@@ -4,6 +4,7 @@ import { PLACEHOLDER } from '@/lib/constants';
 import db from '@/lib/db';
 import { Breadcrumbs, ProductCard } from '@/components/catalog';
 import { GridSkeleton } from '@/components/ui';
+import type { Product } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -76,7 +77,7 @@ async function CatalogContent({ categorySlug }: CatalogContentProps) {
       {/* Products Grid */}
       {products.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {products.map((product: { id: string; name: string; slug: string; price: number | null; image_url: string | null; category_id: string | null; in_stock: boolean; featured: boolean; unit: string; description: string | null }) => (
+          {products.map((product: Product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>

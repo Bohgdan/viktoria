@@ -139,6 +139,11 @@ async function migrate() {
     `);
     console.log('✅ reviews table created\n');
 
+    // Add image_data column to products table (for storing base64 images)
+    console.log('Adding image_data column to products...');
+    await client.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS image_data TEXT`);
+    console.log('✅ image_data column added\n');
+
     // Create indexes
     console.log('Creating indexes...');
     await client.query(`CREATE INDEX IF NOT EXISTS idx_categories_slug ON categories(slug)`);

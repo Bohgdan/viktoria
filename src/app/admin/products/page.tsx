@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Plus, Search, Edit2, Trash2, Package, Loader2, X } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { Plus, Search, Edit2, Trash2, Package, Loader2, X, Upload, Image as ImageIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Product {
@@ -13,6 +13,7 @@ interface Product {
   unit: string;
   min_order_qty: number;
   image_url: string | null;
+  image_data?: string | null;
   in_stock: boolean;
   featured: boolean;
   subcategory_id: string;
@@ -36,6 +37,10 @@ export default function AdminProductsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageData, setImageData] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -93,6 +98,8 @@ export default function AdminProductsPage() {
       in_stock: true,
       is_featured: false,
     });
+    setImagePreview(null);
+    setImageData(null);
     setIsModalOpen(true);
   }
 
@@ -109,7 +116,75 @@ export default function AdminProductsPage() {
       in_stock: product.in_stock,
       is_featured: product.featured,
     });
+    // Set preview from existing image
+    if (product.image_data) {
+      setImagePreview(`/api/images/${product.id}`);
+    } else if (product.image_url) {
+      setImagePreview(product.image_url);
+    } else {
+      setImagePreview(null);
+    }
+    setImageData(null);
     setIsModalOpen(true);
+  }
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Дозволено лише зображення');
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Файл занадто великий (макс. 5MB)');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      if (editingProduct) {
+        // Upload directly to existing product
+        formData.append('productId', editingProduct.id);
+        const res = await fetch('/api/admin/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!res.ok) throw new Error('Upload failed');
+
+        const data = await res.json();
+        setImagePreview(data.imageUrl);
+        toast.success('Зображення завантажено');
+      } else {
+        // Get base64 for new product
+        const res = await fetch('/api/admin/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!res.ok) throw new Error('Upload failed');
+
+        const data = await res.json();
+        setImageData(data.imageData);
+        setImagePreview(data.imageData);
+        toast.success('Зображення готове до збереження');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Помилка завантаження');
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   }
 
   async function handleSave() {
@@ -140,8 +215,10 @@ export default function AdminProductsPage() {
         category_id: categoryId,
         subcategory_id: formData.subcategory_id || null,
         image_url: formData.image_url || null,
+        image_data: imageData || null,
         in_stock: formData.in_stock,
         featured: formData.is_featured,
+        is_active: true,
       };
 
       if (editingProduct) {
@@ -252,12 +329,24 @@ export default function AdminProductsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--color-border)]">
-                {filteredProducts.map((product) => (
+                {filteredProducts.map((product) => {
+                  const productImageUrl = product.image_data 
+                    ? `/api/images/${product.id}` 
+                    : product.image_url;
+                  return (
                   <tr key={product.id} className="hover:bg-[var(--color-bg-hover)]">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded bg-[var(--color-bg-secondary)] flex items-center justify-center flex-shrink-0">
-                          <Package className="w-5 h-5 text-[var(--color-text-muted)]" />
+                        <div className="w-10 h-10 rounded bg-[var(--color-bg-secondary)] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          {productImageUrl ? (
+                            <img 
+                              src={productImageUrl} 
+                              alt={product.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Package className="w-5 h-5 text-[var(--color-text-muted)]" />
+                          )}
                         </div>
                         <div className="min-w-0">
                           <p className="font-medium text-[var(--color-text-primary)] truncate">{product.name}</p>
@@ -302,7 +391,8 @@ export default function AdminProductsPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                );
+                })}
               </tbody>
             </table>
           </div>
@@ -426,16 +516,76 @@ export default function AdminProductsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
-                  URL зображення
+                  Зображення
                 </label>
+                
+                {/* Image Preview */}
+                {(imagePreview || formData.image_url) && (
+                  <div className="mb-3 relative w-full h-40 bg-[var(--color-bg-secondary)] rounded-lg overflow-hidden">
+                    <img
+                      src={imagePreview || formData.image_url}
+                      alt="Превью"
+                      className="w-full h-full object-contain"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImagePreview(null);
+                        setImageData(null);
+                        setFormData(prev => ({ ...prev, image_url: '' }));
+                      }}
+                      className="absolute top-2 right-2 p-1 bg-red-500/80 text-white rounded-full hover:bg-red-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+                
+                {/* Upload Button */}
+                <div className="flex gap-2 mb-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    id="image-upload"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="flex-1 px-3 py-2 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Завантаження...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4" />
+                        Завантажити фото
+                      </>
+                    )}
+                  </button>
+                </div>
+                
+                {/* URL Input */}
                 <input
                   type="url"
                   value={formData.image_url}
-                  onChange={(e) => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, image_url: e.target.value }));
+                    if (e.target.value) {
+                      setImagePreview(e.target.value);
+                      setImageData(null);
+                    }
+                  }}
                   className="w-full px-3 py-2 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)]"
-                  placeholder="https://example.com/image.jpg"
+                  placeholder="або введіть URL зображення"
                 />
-                <p className="text-xs text-[var(--color-text-muted)] mt-1">Пряме посилання на зображення товару</p>
+                <p className="text-xs text-[var(--color-text-muted)] mt-1">Завантажте фото або вставте пряме посилання на зображення</p>
               </div>
 
               <div className="flex items-center gap-6">

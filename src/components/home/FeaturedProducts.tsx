@@ -11,6 +11,14 @@ interface FeaturedProductsProps {
   products?: Product[];
 }
 
+// Helper function to get image URL
+function getProductImageUrl(product: Product): string | null {
+  if (product.image_data) {
+    return `/api/images/${product.id}`;
+  }
+  return product.image_url;
+}
+
 // Demo products for empty state - Perfect 4 you
 const demoProducts: Product[] = [
   { id: '1', name: 'Паприка солодка 1кг', slug: 'papryka-solodka-1kg', description: 'Високоякісна солодка паприка для приготування страв та консервації. Натуральний склад без домішок.', price: null, old_price: null, unit: 'шт', min_order_qty: 10, category_id: null, image_url: null, images: [], in_stock: true, is_visible: true, featured: true, sort_order: 1, created_at: '', updated_at: '' },
@@ -43,7 +51,9 @@ export function FeaturedProducts({ products = demoProducts }: FeaturedProductsPr
 
         {/* 2 large product cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {products.slice(0, 2).map((product) => (
+          {products.slice(0, 2).map((product) => {
+            const imageUrl = getProductImageUrl(product);
+            return (
             <Link
               key={product.id}
               href={`/catalog/product/${product.slug}`}
@@ -51,12 +61,13 @@ export function FeaturedProducts({ products = demoProducts }: FeaturedProductsPr
             >
               {/* Image */}
               <div className="relative h-64 md:h-72 overflow-hidden bg-[var(--color-bg-hover)]">
-                {product.image_url ? (
+                {imageUrl ? (
                   <Image
-                    src={product.image_url}
+                    src={imageUrl}
                     alt={product.name}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    unoptimized={!!product.image_data}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
@@ -92,7 +103,8 @@ export function FeaturedProducts({ products = demoProducts }: FeaturedProductsPr
                 </div>
               </div>
             </Link>
-          ))}
+          );
+          })}
         </div>
 
         {/* View all products */}

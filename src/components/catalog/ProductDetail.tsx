@@ -17,9 +17,14 @@ interface ProductDetailProps {
 export function ProductDetail({ product, category }: ProductDetailProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   
+  // Get main image URL - prioritize image_data, then image_url
+  const mainImageUrl = product.image_data 
+    ? `/api/images/${product.id}` 
+    : product.image_url;
+  
   // Combine main image with additional images
   const allImages = [
-    product.image_url,
+    mainImageUrl,
     ...(product.images || [])
   ].filter(Boolean) as string[];
 

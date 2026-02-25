@@ -29,6 +29,7 @@ export interface Product {
   min_order_qty: number;
   category_id: string | null;
   image_url: string | null;
+  image_data?: string | null;
   images: string[];
   in_stock: boolean;
   is_visible: boolean;

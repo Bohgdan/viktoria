@@ -21,18 +21,24 @@ export function ProductCard({ product, categorySlug }: ProductCardProps) {
     ? `/catalog/${categorySlug}/product/${product.slug}`
     : `/catalog/product/${product.slug}`;
 
+  // Get image URL - prioritize image_data, then image_url
+  const imageUrl = product.image_data 
+    ? `/api/images/${product.id}` 
+    : product.image_url;
+
   return (
     <>
       <div className="group bg-[var(--color-bg-card)]/60 backdrop-blur-sm border border-[var(--color-border)] rounded-xl overflow-hidden hover:border-[var(--color-accent)] transition-all duration-300 h-full flex flex-col">
         {/* Image */}
         <Link href={productUrl} className="block relative aspect-square overflow-hidden bg-[var(--color-bg-secondary)]">
-          {product.image_url ? (
+          {imageUrl ? (
             <Image
-              src={product.image_url}
+              src={imageUrl}
               alt={product.name}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-500"
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+              unoptimized={!!product.image_data}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">

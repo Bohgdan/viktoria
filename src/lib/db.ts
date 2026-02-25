@@ -1,10 +1,12 @@
-import { Pool } from 'pg';
+import { Pool, PoolClient } from 'pg';
 
-// Create a connection pool
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-});
+// Create a connection pool (only if DATABASE_URL is set)
+const pool = process.env.DATABASE_URL 
+  ? new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+    })
+  : null;
 
 // Helper function to execute queries
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -12,11 +14,20 @@ export async function query(
   text: string,
   params?: (string | number | boolean | null | undefined)[]
 ): Promise<{ rows: any[]; rowCount: number | null }> {
-  const client = await pool.connect();
+  if (!pool) {
+    console.warn('DATABASE_URL not configured, returning empty result');
+    return { rows: [], rowCount: 0 };
+  }
+  
+  let client: PoolClient | null = null;
   try {
+    client = await pool.connect();
     return await client.query(text, params);
+  } catch (error) {
+    console.error('Database query error:', text, error);
+    throw error;
   } finally {
-    client.release();
+    if (client) client.release();
   }
 }
 

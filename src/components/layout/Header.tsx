@@ -8,11 +8,18 @@ import { Phone, Mail, Clock, Menu, X } from 'lucide-react';
 import { NAV_ITEMS, PLACEHOLDER } from '@/lib/constants';
 import { cn, formatPhone, getPhoneLink } from '@/lib/utils';
 import { MobileMenu } from './MobileMenu';
+import { useSettings } from '@/lib/SettingsContext';
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
+  const { settings } = useSettings();
+
+  // Use settings from DB, fallback to PLACEHOLDER
+  const phone = settings.phone || PLACEHOLDER.phone;
+  const email = settings.email || PLACEHOLDER.email;
+  const workingHours = settings.working_hours || PLACEHOLDER.workingHours;
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -38,22 +45,22 @@ export function Header() {
               <div className="hidden md:flex items-center gap-6">
                 <span className="flex items-center gap-1.5 text-[var(--color-text-muted)]">
                   <Clock className="w-3.5 h-3.5" />
-                  {PLACEHOLDER.workingHours}
+                  {workingHours}
                 </span>
                 <a 
-                  href={`mailto:${PLACEHOLDER.email}`}
+                  href={`mailto:${email}`}
                   className="flex items-center gap-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
                 >
                   <Mail className="w-3.5 h-3.5" />
-                  {PLACEHOLDER.email}
+                  {email}
                 </a>
               </div>
               <a
-                href={getPhoneLink(PLACEHOLDER.phone)}
+                href={getPhoneLink(phone)}
                 className="flex items-center gap-1.5 text-[var(--color-text-secondary)] font-medium hover:text-[var(--color-text-primary)] transition-colors ml-auto"
               >
                 <Phone className="w-3.5 h-3.5" />
-                {formatPhone(PLACEHOLDER.phone)}
+                {formatPhone(phone)}
               </a>
             </div>
           </div>
@@ -102,13 +109,13 @@ export function Header() {
               {/* Right Side: Phone + CTA */}
               <div className="hidden lg:flex items-center gap-4">
                 <a
-                  href={getPhoneLink(PLACEHOLDER.phone)}
+                  href={getPhoneLink(phone)}
                   className="flex items-center gap-2 text-[var(--color-text-primary)] hover:text-[var(--color-accent)] transition-colors"
                 >
                   <div className="w-10 h-10 rounded-full bg-[var(--color-accent-light)] flex items-center justify-center">
                     <Phone className="w-5 h-5 text-[var(--color-accent)]" />
                   </div>
-                  <span className="font-semibold">{formatPhone(PLACEHOLDER.phone)}</span>
+                  <span className="font-semibold">{formatPhone(phone)}</span>
                 </a>
                 <Link
                   href="/catalog"

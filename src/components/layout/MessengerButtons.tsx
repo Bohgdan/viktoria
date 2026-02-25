@@ -4,11 +4,18 @@ import { useState } from 'react';
 import { MessageCircle, X, ChevronUp } from 'lucide-react';
 import { PLACEHOLDER } from '@/lib/constants';
 import { getViberLink, getTelegramLink, getWhatsAppLink, cn } from '@/lib/utils';
+import { useSettings } from '@/lib/SettingsContext';
 import Image from 'next/image';
 
 export function MessengerButtons() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const { settings } = useSettings();
+
+  // Use settings from DB, fallback to PLACEHOLDER
+  const viber = settings.viber || PLACEHOLDER.viber;
+  const telegram = settings.telegram || PLACEHOLDER.telegram;
+  const whatsapp = settings.whatsapp || settings.viber || PLACEHOLDER.whatsapp;
 
   // Show scroll-to-top button after scrolling
   if (typeof window !== 'undefined') {
@@ -24,19 +31,19 @@ export function MessengerButtons() {
   const messengers = [
     {
       name: 'Viber',
-      href: getViberLink(PLACEHOLDER.viber),
+      href: getViberLink(viber),
       color: '#7360f2',
       icon: '/icons/viber.svg',
     },
     {
       name: 'Telegram',
-      href: getTelegramLink(PLACEHOLDER.telegram),
+      href: getTelegramLink(telegram),
       color: '#0088cc',
       icon: '/icons/telegram.svg',
     },
     {
       name: 'WhatsApp',
-      href: getWhatsAppLink(PLACEHOLDER.whatsapp),
+      href: getWhatsAppLink(whatsapp),
       color: '#25d366',
       icon: '/icons/whatsapp.svg',
     },

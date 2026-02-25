@@ -1,8 +1,11 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
 import { Phone, Mail, MapPin, Instagram, Facebook } from 'lucide-react';
 import { PLACEHOLDER } from '@/lib/constants';
 import { formatPhone, getPhoneLink } from '@/lib/utils';
+import { useSettings } from '@/lib/SettingsContext';
 
 const catalogLinks = [
   { label: 'Спеції та приправи', href: '/catalog/spetsii-ta-prypravy' },
@@ -14,6 +17,14 @@ const catalogLinks = [
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
+  const { settings } = useSettings();
+
+  // Use settings from DB, fallback to PLACEHOLDER
+  const phone = settings.phone || PLACEHOLDER.phone;
+  const email = settings.email || PLACEHOLDER.email;
+  const address = settings.address || PLACEHOLDER.address;
+  const instagram = settings.instagram || PLACEHOLDER.instagram;
+  const facebook = settings.facebook || PLACEHOLDER.facebook;
 
   return (
     <footer className="bg-[var(--color-bg-primary)] border-t border-[var(--color-border)] relative z-10">
@@ -37,24 +48,28 @@ export function Footer() {
             
             {/* Social Media */}
             <div className="flex gap-3">
-              <a
-                href={PLACEHOLDER.instagram}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-[var(--color-bg-card)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-hover)] transition-colors"
-                aria-label="Instagram"
-              >
-                <Instagram className="w-5 h-5" />
-              </a>
-              <a
-                href={PLACEHOLDER.facebook}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-[var(--color-bg-card)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-hover)] transition-colors"
-                aria-label="Facebook"
-              >
-                <Facebook className="w-5 h-5" />
-              </a>
+              {instagram && (
+                <a
+                  href={instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center w-10 h-10 rounded-full bg-[var(--color-bg-card)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-hover)] transition-colors"
+                  aria-label="Instagram"
+                >
+                  <Instagram className="w-5 h-5" />
+                </a>
+              )}
+              {facebook && (
+                <a
+                  href={facebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center w-10 h-10 rounded-full bg-[var(--color-bg-card)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-hover)] transition-colors"
+                  aria-label="Facebook"
+                >
+                  <Facebook className="w-5 h-5" />
+                </a>
+              )}
             </div>
           </div>
 
@@ -83,22 +98,22 @@ export function Footer() {
             </h3>
             <div className="space-y-4">
               <a
-                href={getPhoneLink(PLACEHOLDER.phone)}
+                href={getPhoneLink(phone)}
                 className="flex items-center gap-3 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
               >
                 <Phone className="w-5 h-5 flex-shrink-0 text-[var(--color-accent)]" />
-                <span>{formatPhone(PLACEHOLDER.phone)}</span>
+                <span>{formatPhone(phone)}</span>
               </a>
               <a
-                href={`mailto:${PLACEHOLDER.email}`}
+                href={`mailto:${email}`}
                 className="flex items-center gap-3 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
               >
                 <Mail className="w-5 h-5 flex-shrink-0 text-[var(--color-accent)]" />
-                <span>{PLACEHOLDER.email}</span>
+                <span>{email}</span>
               </a>
               <div className="flex items-start gap-3 text-[var(--color-text-muted)]">
                 <MapPin className="w-5 h-5 flex-shrink-0 mt-0.5 text-[var(--color-accent)]" />
-                <span>{PLACEHOLDER.address}</span>
+                <span>{address}</span>
               </div>
             </div>
           </div>

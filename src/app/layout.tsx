@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header, Footer, MessengerButtons, CallbackButton } from "@/components/layout";
 import { Toaster } from "@/components/ui";
 import { PLACEHOLDER } from "@/lib/constants";
+import { SettingsProvider } from "@/lib/SettingsContext";
 
 const playfairDisplay = Playfair_Display({
   variable: "--font-heading",
@@ -61,12 +62,14 @@ export default function RootLayout({
       <body
         className={`${playfairDisplay.variable} ${montserrat.variable} antialiased min-h-screen flex flex-col`}
       >
-        <Header />
-        <main className="flex-1 relative z-10">{children}</main>
-        <Footer />
-        <MessengerButtons />
-        <CallbackButton />
-        <Toaster />
+        <SettingsProvider>
+          <Header />
+          <main className="flex-1 relative z-10">{children}</main>
+          <Footer />
+          <MessengerButtons />
+          <CallbackButton />
+          <Toaster />
+        </SettingsProvider>
       </body>
     </html>
   );

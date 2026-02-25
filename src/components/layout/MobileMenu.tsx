@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Phone, Mail, MapPin, Instagram, Facebook } from 'lucide-react';
 import { NAV_ITEMS, PLACEHOLDER } from '@/lib/constants';
 import { cn, formatPhone, getPhoneLink, getViberLink, getTelegramLink, getWhatsAppLink } from '@/lib/utils';
+import { useSettings } from '@/lib/SettingsContext';
 import Image from 'next/image';
 
 interface MobileMenuProps {
@@ -14,6 +15,17 @@ interface MobileMenuProps {
 
 export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
   const pathname = usePathname();
+  const { settings } = useSettings();
+
+  // Use settings from DB, fallback to PLACEHOLDER
+  const phone = settings.phone || PLACEHOLDER.phone;
+  const email = settings.email || PLACEHOLDER.email;
+  const address = settings.address || PLACEHOLDER.address;
+  const viber = settings.viber || PLACEHOLDER.viber;
+  const telegram = settings.telegram || PLACEHOLDER.telegram;
+  const whatsapp = settings.whatsapp || settings.viber || PLACEHOLDER.whatsapp;
+  const instagram = settings.instagram || PLACEHOLDER.instagram;
+  const facebook = settings.facebook || PLACEHOLDER.facebook;
 
   return (
     <div
@@ -68,24 +80,24 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             </h3>
             
             <a
-              href={getPhoneLink(PLACEHOLDER.phone)}
+              href={getPhoneLink(phone)}
               className="flex items-center gap-3 text-[var(--color-text-primary)] hover:text-[var(--color-accent)] transition-colors"
             >
               <Phone className="w-5 h-5 text-[var(--color-accent)]" />
-              <span className="font-medium">{formatPhone(PLACEHOLDER.phone)}</span>
+              <span className="font-medium">{formatPhone(phone)}</span>
             </a>
 
             <a
-              href={`mailto:${PLACEHOLDER.email}`}
+              href={`mailto:${email}`}
               className="flex items-center gap-3 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
             >
               <Mail className="w-5 h-5 text-[var(--color-accent)]" />
-              <span>{PLACEHOLDER.email}</span>
+              <span>{email}</span>
             </a>
 
             <div className="flex items-start gap-3 text-[var(--color-text-secondary)]">
               <MapPin className="w-5 h-5 text-[var(--color-accent)] flex-shrink-0 mt-0.5" />
-              <span>{PLACEHOLDER.address}</span>
+              <span>{address}</span>
             </div>
           </div>
 
@@ -97,7 +109,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             
             <div className="flex gap-4">
               <a
-                href={getViberLink(PLACEHOLDER.viber)}
+                href={getViberLink(viber)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center w-12 h-12 rounded-full bg-[#7360f2] text-white hover:opacity-90 transition-opacity"
@@ -105,7 +117,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                 <Image src="/icons/viber.svg" alt="Viber" width={24} height={24} />
               </a>
               <a
-                href={getTelegramLink(PLACEHOLDER.telegram)}
+                href={getTelegramLink(telegram)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center w-12 h-12 rounded-full bg-[#0088cc] text-white hover:opacity-90 transition-opacity"
@@ -113,7 +125,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                 <Image src="/icons/telegram.svg" alt="Telegram" width={24} height={24} />
               </a>
               <a
-                href={getWhatsAppLink(PLACEHOLDER.whatsapp)}
+                href={getWhatsAppLink(whatsapp)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center w-12 h-12 rounded-full bg-[#25d366] text-white hover:opacity-90 transition-opacity"
@@ -130,22 +142,26 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             </h3>
             
             <div className="flex gap-4">
-              <a
-                href={PLACEHOLDER.instagram}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center w-12 h-12 rounded-full bg-[var(--color-bg-hover)] text-[var(--color-text-primary)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-light)] transition-colors"
-              >
-                <Instagram className="w-6 h-6" />
-              </a>
-              <a
-                href={PLACEHOLDER.facebook}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center w-12 h-12 rounded-full bg-[var(--color-bg-hover)] text-[var(--color-text-primary)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-light)] transition-colors"
-              >
-                <Facebook className="w-6 h-6" />
-              </a>
+              {instagram && (
+                <a
+                  href={instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center w-12 h-12 rounded-full bg-[var(--color-bg-hover)] text-[var(--color-text-primary)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-light)] transition-colors"
+                >
+                  <Instagram className="w-6 h-6" />
+                </a>
+              )}
+              {facebook && (
+                <a
+                  href={facebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center w-12 h-12 rounded-full bg-[var(--color-bg-hover)] text-[var(--color-text-primary)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-light)] transition-colors"
+                >
+                  <Facebook className="w-6 h-6" />
+                </a>
+              )}
             </div>
           </div>
         </div>

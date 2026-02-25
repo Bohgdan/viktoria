@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Phone, Mail, MapPin, Instagram, Facebook } from 'lucide-react';
 import { PLACEHOLDER } from '@/lib/constants';
 import { formatPhone, getPhoneLink } from '@/lib/utils';
@@ -22,11 +23,13 @@ export function Footer() {
           {/* Company Info */}
           <div>
             <Link href="/" className="flex items-center gap-2 mb-4 group">
-              <span className="text-2xl font-bold font-[family-name:var(--font-heading)] text-[var(--color-text-primary)] group-hover:text-[var(--color-accent)] transition-colors">
-                Perfect
-                <span className="text-[var(--color-accent)]"> 4 </span>
-                You
-              </span>
+              <Image
+                src="/images/logo.png"
+                alt={PLACEHOLDER.companyName}
+                width={490}
+                height={200}
+                className="h-10 w-auto object-contain"
+              />
             </Link>
             <p className="text-[var(--color-text-muted)] mb-6 text-sm leading-relaxed">
               Надійний партнер у сфері гуртової торгівлі з 2013 року. Закарпатські спеції, угорські макарони, якісна консервація. Понад 1000 постійних клієнтів.

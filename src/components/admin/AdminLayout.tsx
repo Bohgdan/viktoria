@@ -95,8 +95,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <Image
               src="/images/logo.png"
               alt={PLACEHOLDER.companyName}
-              width={120}
-              height={36}
+              width={490}
+              height={200}
               className="h-8 w-auto object-contain"
             />
           </Link>

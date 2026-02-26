@@ -227,7 +227,10 @@ export default function AdminProductsPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(productData),
         });
-        if (!res.ok) throw new Error('Failed to update');
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || 'Failed to update');
+        }
         toast.success('Товар оновлено');
       } else {
         const res = await fetch('/api/admin/products', {
@@ -235,7 +238,10 @@ export default function AdminProductsPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(productData),
         });
-        if (!res.ok) throw new Error('Failed to create');
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || 'Failed to create');
+        }
         toast.success('Товар додано');
       }
 
@@ -243,7 +249,8 @@ export default function AdminProductsPage() {
       fetchProducts();
     } catch (error) {
       console.error('Error saving product:', error);
-      toast.error('Помилка збереження');
+      const msg = error instanceof Error ? error.message : 'Помилка збереження';
+      toast.error(msg);
     } finally {
       setIsSaving(false);
     }

@@ -45,8 +45,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Create product error:', error);
     const message = error instanceof Error ? error.message : 'Невідома помилка';
+    const stack = error instanceof Error ? error.stack : '';
     return NextResponse.json(
-      { error: `Помилка створення товару: ${message}` },
+      { error: `Помилка створення товару: ${message}`, details: stack },
       { status: 500, headers }
     );
   }

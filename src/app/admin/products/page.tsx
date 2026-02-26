@@ -217,7 +217,7 @@ export default function AdminProductsPage() {
         image_url: formData.image_url || null,
         image_data: imageData || null,
         in_stock: formData.in_stock,
-        featured: formData.is_featured,
+        is_featured: formData.is_featured,
         is_active: true,
       };
 

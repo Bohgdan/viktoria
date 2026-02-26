@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MessageCircle, X, ChevronUp } from 'lucide-react';
 import { PLACEHOLDER } from '@/lib/constants';
 import { getViberLink, getTelegramLink, getWhatsAppLink, cn } from '@/lib/utils';
@@ -18,11 +18,13 @@ export function MessengerButtons() {
   const whatsapp = settings.whatsapp || settings.viber || PLACEHOLDER.whatsapp;
 
   // Show scroll-to-top button after scrolling
-  if (typeof window !== 'undefined') {
-    window.addEventListener('scroll', () => {
+  useEffect(() => {
+    const handleScroll = () => {
       setShowScrollTop(window.scrollY > 500);
-    });
-  }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });

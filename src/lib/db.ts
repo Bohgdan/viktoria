@@ -283,6 +283,18 @@ export const db = {
     await query('DELETE FROM subcategories WHERE id = $1', [id]);
   },
 
+  async updateSubcategory(id: string, data: Record<string, unknown>) {
+    const keys = Object.keys(data);
+    const values = Object.values(data) as (string | number | boolean | null | undefined)[];
+    const setClause = keys.map((key, i) => `${key} = $${i + 2}`).join(', ');
+    
+    const result = await query(
+      `UPDATE subcategories SET ${setClause}, updated_at = now() WHERE id = $1 RETURNING *`,
+      [id, ...values]
+    );
+    return result.rows[0];
+  },
+
   async getAllRequests() {
     const contactRequests = await query(
       `SELECT id, name, phone, email, message, status, created_at, 'contact' as type FROM contact_requests ORDER BY created_at DESC`

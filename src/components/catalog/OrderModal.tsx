@@ -33,16 +33,17 @@ export function OrderModal({ isOpen, onClose, product }: OrderModalProps) {
     setIsSubmitting(true);
 
     try {
-      // В реальному проекті тут буде API-запит
-      // Симулюємо затримку мережі
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      console.log('Order submission:', {
-        product: product.name,
-        name: formData.name,
-        phone: formData.phone,
-        comment: formData.comment,
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          phone: formData.phone,
+          message: `Замовлення: ${product.name}${formData.comment ? '. ' + formData.comment : ''}`,
+          type: 'order',
+        }),
       });
+      if (!response.ok) throw new Error('Failed to submit');
 
       showToast.success('Заявку надіслано! Ми зв\'яжемося з вами.');
       setFormData({ name: '', phone: '', comment: '' });

@@ -59,7 +59,7 @@ export function CallbackButton() {
       {/* Floating Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 md:bottom-8 md:right-8 w-14 h-14 md:w-16 md:h-16 rounded-full bg-[var(--color-accent)] text-[var(--color-accent-dark)] shadow-lg hover:scale-105 hover:shadow-xl transition-all duration-300 z-[200] flex items-center justify-center"
+        className="fixed bottom-6 left-6 md:bottom-8 md:left-8 w-14 h-14 md:w-16 md:h-16 rounded-full bg-[var(--color-accent)] text-[var(--color-accent-dark)] shadow-lg hover:scale-105 hover:shadow-xl transition-all duration-300 z-[200] flex items-center justify-center"
         aria-label="Замовити дзвінок"
       >
         <Phone className="w-6 h-6 md:w-7 md:h-7" />
@@ -75,7 +75,7 @@ export function CallbackButton() {
           />
           
           {/* Popup */}
-          <div className="fixed bottom-24 right-6 md:bottom-28 md:right-8 w-[320px] bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-xl shadow-2xl z-[301] overflow-hidden animate-fade-in-up">
+          <div className="fixed bottom-24 left-6 md:bottom-28 md:left-8 w-[320px] bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-xl shadow-2xl z-[301] overflow-hidden animate-fade-in-up">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-[var(--color-border)]">
               <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">

@@ -141,7 +141,7 @@ export default function AdminCategoriesPage() {
           const res = await fetch(`/api/admin/categories/${editingItem.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: formData.name, slug }),
+            body: JSON.stringify({ type: 'subcategory', name: formData.name, slug }),
           });
           if (!res.ok) throw new Error('Failed to update');
           toast.success('Підкатегорію оновлено');

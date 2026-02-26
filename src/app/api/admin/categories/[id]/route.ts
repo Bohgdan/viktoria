@@ -15,12 +15,16 @@ export async function PUT(
   try {
     const { id } = await params;
     const data = await request.json();
-    const category = await db.updateCategory(id, data);
+    const { type, ...updateData } = data;
+    
+    const result = type === 'subcategory'
+      ? await db.updateSubcategory(id, updateData)
+      : await db.updateCategory(id, updateData);
     
     revalidatePath('/catalog');
     revalidatePath('/');
     
-    return NextResponse.json(category, { headers });
+    return NextResponse.json(result, { headers });
   } catch (error) {
     console.error('Update category error:', error);
     return NextResponse.json(

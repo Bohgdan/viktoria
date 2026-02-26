@@ -17,9 +17,15 @@ interface Request {
 
 const STATUS_OPTIONS = [
   { value: 'new', label: 'Нова', color: 'bg-blue-500/20 text-blue-400' },
-  { value: 'processing', label: 'В роботі', color: 'bg-yellow-500/20 text-yellow-400' },
-  { value: 'completed', label: 'Завершено', color: 'bg-green-500/20 text-green-400' },
+  { value: 'in_progress', label: 'В роботі', color: 'bg-yellow-500/20 text-yellow-400' },
+  { value: 'closed', label: 'Завершено', color: 'bg-green-500/20 text-green-400' },
 ];
+
+// Маппинг статусов из БД в UI (callback_requests используют 'contacted' вместо 'in_progress')
+function normalizeStatus(status: string): string {
+  if (status === 'contacted') return 'in_progress';
+  return status;
+}
 
 const TYPE_LABELS: Record<string, string> = {
   callback: 'Зворотній дзвінок',
@@ -56,10 +62,12 @@ export default function AdminRequestsPage() {
 
   async function updateStatus(id: string, type: string, status: string) {
     try {
+      // Для callback_requests маппим in_progress -> contacted
+      const dbStatus = (type === 'callback' && status === 'in_progress') ? 'contacted' : status;
       const res = await fetch(`/api/admin/requests/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, status }),
+        body: JSON.stringify({ type, status: dbStatus }),
       });
       if (!res.ok) throw new Error('Failed to update');
 
@@ -102,7 +110,7 @@ export default function AdminRequestsPage() {
     const matchesSearch = r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       r.phone.includes(searchQuery) ||
       r.email?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
+    const matchesStatus = statusFilter === 'all' || normalizeStatus(r.status) === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -157,7 +165,8 @@ export default function AdminRequestsPage() {
       ) : filteredRequests.length > 0 ? (
         <div className="space-y-4">
           {filteredRequests.map((request) => {
-            const statusOption = STATUS_OPTIONS.find(s => s.value === request.status);
+            const displayStatus = normalizeStatus(request.status);
+            const statusOption = STATUS_OPTIONS.find(s => s.value === displayStatus);
             const isExpanded = expandedId === request.id;
 
             return (
@@ -232,7 +241,7 @@ export default function AdminRequestsPage() {
                             key={opt.value}
                             onClick={() => updateStatus(request.id, request.type, opt.value)}
                             className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                              request.status === opt.value
+                              displayStatus === opt.value
                                 ? opt.color
                                 : 'bg-[var(--color-bg-secondary)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'
                             }`}

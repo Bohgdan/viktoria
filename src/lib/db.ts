@@ -481,7 +481,7 @@ export const db = {
         `INSERT INTO site_settings (key, value, updated_at) 
          VALUES ($1, $2, now()) 
          ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = now()`,
-        [key, JSON.stringify(value)]
+        [key, String(value)]
       );
     }
     return settings;
@@ -497,7 +497,7 @@ export const db = {
       `INSERT INTO site_settings (key, value, updated_at) 
        VALUES ($1, $2, now()) 
        ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = now()`,
-      [key, JSON.stringify(value)]
+      [key, String(value)]
     );
   },
 };

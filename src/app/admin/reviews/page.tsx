@@ -7,10 +7,9 @@ import toast from 'react-hot-toast';
 interface Review {
   id: string;
   author_name: string;
-  author_company: string | null;
-  content: string;
+  company: string | null;
+  text: string;
   rating: number;
-  is_approved: boolean;
   is_visible: boolean;
   created_at: string;
 }
@@ -23,10 +22,10 @@ export default function AdminReviewsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     author_name: '',
-    author_company: '',
-    content: '',
+    company: '',
+    text: '',
     rating: 5,
-    is_approved: true,
+    is_visible: true,
   });
 
   useEffect(() => {
@@ -52,16 +51,16 @@ export default function AdminReviewsPage() {
     setEditingReview(review || null);
     setFormData({
       author_name: review?.author_name || '',
-      author_company: review?.author_company || '',
-      content: review?.content || '',
+      company: review?.company || '',
+      text: review?.text || '',
       rating: review?.rating || 5,
-      is_approved: review?.is_approved ?? true,
+      is_visible: review?.is_visible ?? true,
     });
     setIsModalOpen(true);
   }
 
   async function handleSave() {
-    if (!formData.author_name || !formData.content) {
+    if (!formData.author_name || !formData.text) {
       toast.error('Заповніть обов\'язкові поля');
       return;
     }
@@ -70,11 +69,10 @@ export default function AdminReviewsPage() {
     try {
       const data = {
         author_name: formData.author_name,
-        author_company: formData.author_company || null,
-        content: formData.content,
+        company: formData.company || null,
+        text: formData.text,
         rating: formData.rating,
-        is_approved: formData.is_approved,
-        is_visible: formData.is_approved,
+        is_visible: formData.is_visible,
       };
 
       if (editingReview) {
@@ -110,11 +108,11 @@ export default function AdminReviewsPage() {
       const res = await fetch(`/api/admin/reviews/${review.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_approved: !review.is_approved, is_visible: !review.is_approved }),
+        body: JSON.stringify({ is_visible: !review.is_visible }),
       });
       if (!res.ok) throw new Error('Failed to update');
-      setReviews(prev => prev.map(r => r.id === review.id ? { ...r, is_approved: !r.is_approved } : r));
-      toast.success(review.is_approved ? 'Відгук приховано' : 'Відгук опубліковано');
+      setReviews(prev => prev.map(r => r.id === review.id ? { ...r, is_visible: !r.is_visible } : r));
+      toast.success(review.is_visible ? 'Відгук приховано' : 'Відгук опубліковано');
     } catch (error) {
       console.error('Error:', error);
       toast.error('Помилка');
@@ -160,7 +158,7 @@ export default function AdminReviewsPage() {
             Відгуки
           </h1>
           <p className="text-[var(--color-text-muted)] mt-1">
-            {reviews.length} відгуків ({reviews.filter(r => r.is_approved).length} опубліковано)
+            {reviews.length} відгуків ({reviews.filter(r => r.is_visible).length} опубліковано)
           </p>
         </div>
         <button
@@ -178,14 +176,14 @@ export default function AdminReviewsPage() {
           <div
             key={review.id}
             className={`bg-[var(--color-bg-card)] border rounded-xl p-4 ${
-              review.is_approved ? 'border-[var(--color-border)]' : 'border-yellow-500/30 bg-yellow-500/5'
+              review.is_visible ? 'border-[var(--color-border)]' : 'border-yellow-500/30 bg-yellow-500/5'
             }`}
           >
             <div className="flex items-start justify-between gap-3 mb-3">
               <div>
                 <p className="font-semibold text-[var(--color-text-primary)]">{review.author_name}</p>
-                {review.author_company && (
-                  <p className="text-sm text-[var(--color-text-muted)]">{review.author_company}</p>
+                {review.company && (
+                  <p className="text-sm text-[var(--color-text-muted)]">{review.company}</p>
                 )}
               </div>
               <div className="flex items-center gap-1">
@@ -198,7 +196,7 @@ export default function AdminReviewsPage() {
               </div>
             </div>
 
-            <p className="text-[var(--color-text-secondary)] text-sm mb-4 line-clamp-3">{review.content}</p>
+            <p className="text-[var(--color-text-secondary)] text-sm mb-4 line-clamp-3">{review.text}</p>
 
             <div className="flex items-center justify-between">
               <span className="text-xs text-[var(--color-text-muted)]">{formatDate(review.created_at)}</span>
@@ -206,13 +204,13 @@ export default function AdminReviewsPage() {
                 <button
                   onClick={() => togglePublished(review)}
                   className={`p-2 rounded-lg transition-colors ${
-                    review.is_approved
+                    review.is_visible
                       ? 'text-green-400 hover:bg-green-500/10'
                       : 'text-yellow-400 hover:bg-yellow-500/10'
                   }`}
-                  title={review.is_approved ? 'Приховати' : 'Опублікувати'}
+                  title={review.is_visible ? 'Приховати' : 'Опублікувати'}
                 >
-                  {review.is_approved ? <Check className="w-4 h-4" /> : <XIcon className="w-4 h-4" />}
+                  {review.is_visible ? <Check className="w-4 h-4" /> : <XIcon className="w-4 h-4" />}
                 </button>
                 <button
                   onClick={() => openModal(review)}
@@ -267,8 +265,8 @@ export default function AdminReviewsPage() {
                 <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Компанія</label>
                 <input
                   type="text"
-                  value={formData.author_company}
-                  onChange={(e) => setFormData(prev => ({ ...prev, author_company: e.target.value }))}
+                  value={formData.company}
+                  onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
                   className="w-full px-3 py-2 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)]"
                   placeholder="Назва компанії (опціонально)"
                 />
@@ -276,8 +274,8 @@ export default function AdminReviewsPage() {
               <div>
                 <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Текст *</label>
                 <textarea
-                  value={formData.content}
-                  onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                  value={formData.text}
+                  onChange={(e) => setFormData(prev => ({ ...prev, text: e.target.value }))}
                   className="w-full px-3 py-2 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] resize-none"
                   rows={4}
                   placeholder="Текст відгуку"
@@ -303,8 +301,8 @@ export default function AdminReviewsPage() {
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={formData.is_approved}
-                  onChange={(e) => setFormData(prev => ({ ...prev, is_approved: e.target.checked }))}
+                  checked={formData.is_visible}
+                  onChange={(e) => setFormData(prev => ({ ...prev, is_visible: e.target.checked }))}
                   className="w-4 h-4 accent-[var(--color-accent)]"
                 />
                 <span className="text-sm text-[var(--color-text-secondary)]">Опублікувати</span>

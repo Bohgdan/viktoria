@@ -1,13 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import type { Metadata } from 'next';
 import Image from 'next/image';
 import { Phone, Mail, MapPin, Clock, Send } from 'lucide-react';
 import { PLACEHOLDER } from '@/lib/constants';
 import { formatPhone, getPhoneLink, getViberLink, getTelegramLink, getWhatsAppLink, isValidEmail, isValidPhone } from '@/lib/utils';
 import { Breadcrumbs } from '@/components/catalog';
 import { Input, Textarea, Button, showToast } from '@/components/ui';
+import { useSettings } from '@/lib/SettingsContext';
 
 // Metadata should be in a separate file for client components, but we include it in page structure
 // export const metadata: Metadata = {
@@ -17,6 +17,17 @@ import { Input, Textarea, Button, showToast } from '@/components/ui';
 
 export default function ContactsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { settings } = useSettings();
+
+  // Use settings from DB, fallback to PLACEHOLDER
+  const phone = settings.phone || PLACEHOLDER.phone;
+  const email = settings.email || PLACEHOLDER.email;
+  const address = settings.address || PLACEHOLDER.address;
+  const workingHours = settings.working_hours || PLACEHOLDER.workingHours;
+  const viber = settings.viber || PLACEHOLDER.viber;
+  const telegram = settings.telegram || PLACEHOLDER.telegram;
+  const whatsapp = settings.whatsapp || PLACEHOLDER.whatsapp;
+
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -119,10 +130,10 @@ export default function ContactsPage() {
                     Телефон
                   </h3>
                   <a
-                    href={getPhoneLink(PLACEHOLDER.phone)}
+                    href={getPhoneLink(phone)}
                     className="text-lg text-[var(--color-accent)] hover:underline"
                   >
-                    {formatPhone(PLACEHOLDER.phone)}
+                    {formatPhone(phone)}
                   </a>
                 </div>
               </div>
@@ -137,10 +148,10 @@ export default function ContactsPage() {
                     Email
                   </h3>
                   <a
-                    href={`mailto:${PLACEHOLDER.email}`}
+                    href={`mailto:${email}`}
                     className="text-lg text-[var(--color-accent)] hover:underline"
                   >
-                    {PLACEHOLDER.email}
+                    {email}
                   </a>
                 </div>
               </div>
@@ -155,7 +166,7 @@ export default function ContactsPage() {
                     Адреса
                   </h3>
                   <p className="text-[var(--color-text-secondary)]">
-                    {PLACEHOLDER.address}
+                    {address}
                   </p>
                 </div>
               </div>
@@ -170,7 +181,7 @@ export default function ContactsPage() {
                     Графік роботи
                   </h3>
                   <p className="text-[var(--color-text-secondary)]">
-                    {PLACEHOLDER.workingHours}
+                    {workingHours}
                   </p>
                 </div>
               </div>
@@ -183,7 +194,7 @@ export default function ContactsPage() {
               </h3>
               <div className="flex gap-3">
                 <a
-                  href={getViberLink(PLACEHOLDER.viber)}
+                  href={getViberLink(viber)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#7360f2] text-white hover:opacity-90 transition-opacity"
@@ -192,7 +203,7 @@ export default function ContactsPage() {
                   <span className="font-medium">Viber</span>
                 </a>
                 <a
-                  href={getTelegramLink(PLACEHOLDER.telegram)}
+                  href={getTelegramLink(telegram)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#0088cc] text-white hover:opacity-90 transition-opacity"
@@ -201,7 +212,7 @@ export default function ContactsPage() {
                   <span className="font-medium">Telegram</span>
                 </a>
                 <a
-                  href={getWhatsAppLink(PLACEHOLDER.whatsapp)}
+                  href={getWhatsAppLink(whatsapp)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#25d366] text-white hover:opacity-90 transition-opacity"

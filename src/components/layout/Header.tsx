@@ -55,13 +55,6 @@ export function Header() {
                   {email}
                 </a>
               </div>
-              <a
-                href={getPhoneLink(phone)}
-                className="flex items-center gap-1.5 text-[var(--color-text-secondary)] font-medium hover:text-[var(--color-text-primary)] transition-colors ml-auto"
-              >
-                <Phone className="w-3.5 h-3.5" />
-                {formatPhone(phone)}
-              </a>
             </div>
           </div>
         </div>

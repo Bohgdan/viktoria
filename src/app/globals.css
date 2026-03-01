@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Logo white filter */
+.logo-white {
+  filter: brightness(0) invert(1) !important;
+}
+
 /* ============================================
    PERFECT 4 YOU - CSS VARIABLES
    Преміальний food aesthetic дизайн

@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { Phone, Mail, MapPin, Instagram, Facebook } from 'lucide-react';
 import { PLACEHOLDER } from '@/lib/constants';
 import { formatPhone, getPhoneLink } from '@/lib/utils';
@@ -34,13 +33,10 @@ export function Footer() {
           {/* Company Info */}
           <div>
             <Link href="/" className="flex items-center gap-2 mb-4 group">
-              <Image
+              <img
                 src="/images/logo.png"
                 alt={PLACEHOLDER.companyName}
-                width={490}
-                height={200}
-                className="h-10 w-auto object-contain"
-                style={{ filter: 'brightness(0) invert(1)' }}
+                className="logo-white h-10 w-auto object-contain"
               />
             </Link>
             <p className="text-[var(--color-text-muted)] mb-6 text-sm leading-relaxed">

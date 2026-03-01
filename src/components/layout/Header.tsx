@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Phone, Mail, Clock, Menu, X } from 'lucide-react';
 import { NAV_ITEMS, PLACEHOLDER } from '@/lib/constants';
@@ -68,14 +67,10 @@ export function Header() {
             <div className="h-[72px] flex items-center justify-between gap-4">
               {/* Logo */}
               <Link href="/" className="flex items-center gap-2 group flex-shrink-0">
-                <Image
+                <img
                   src="/images/logo.png"
                   alt={PLACEHOLDER.companyName}
-                  width={490}
-                  height={200}
-                  className="h-10 md:h-12 w-auto object-contain"
-                  style={{ filter: 'brightness(0) invert(1)' }}
-                  priority
+                  className="logo-white h-10 md:h-12 w-auto object-contain"
                 />
               </Link>
 

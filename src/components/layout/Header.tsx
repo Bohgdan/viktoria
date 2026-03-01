@@ -74,7 +74,6 @@ export function Header() {
                   width={490}
                   height={200}
                   className="h-10 md:h-12 w-auto object-contain"
-                  style={{ filter: 'brightness(0) invert(1)' }}
                   priority
                 />
               </Link>

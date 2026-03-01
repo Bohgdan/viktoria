@@ -70,7 +70,7 @@ export function Header() {
                 <img
                   src="/images/logo.png"
                   alt={PLACEHOLDER.companyName}
-                  className="logo-white h-10 md:h-12 w-auto object-contain"
+                  className="h-10 md:h-12 w-auto object-contain"
                 />
               </Link>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 
 interface UseCountUpOptions {
   start?: number;
@@ -32,24 +32,23 @@ export function useCountUp(options: UseCountUpOptions) {
   } = options;
 
   const [count, setCount] = useState(start);
-  const [hasStarted, setHasStarted] = useState(false);
   const ref = useRef<HTMLElement>(null);
   const animationRef = useRef<number | null>(null);
+  const hasStartedRef = useRef(false);
 
-  const formatNumber = (num: number): string => {
+  const formatNumber = useCallback((num: number): string => {
     const fixed = num.toFixed(decimals);
     const parts = fixed.split('.');
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, separator);
     return prefix + parts.join('.') + suffix;
-  };
+  }, [decimals, separator, prefix, suffix]);
 
-  const startAnimation = () => {
-    if (hasStarted) return;
-    setHasStarted(true);
+  const startAnimation = useCallback(() => {
+    if (hasStartedRef.current) return;
+    hasStartedRef.current = true;
 
     // Check for reduced motion preference
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) {
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       setCount(end);
       return;
     }
@@ -78,7 +77,7 @@ export function useCountUp(options: UseCountUpOptions) {
     };
 
     animationRef.current = requestAnimationFrame(animate);
-  };
+  }, [start, end, duration, delay]);
 
   useEffect(() => {
     if (!startOnView) {
@@ -87,11 +86,20 @@ export function useCountUp(options: UseCountUpOptions) {
     }
 
     const element = ref.current;
-    if (!element) return;
+    if (!element) {
+      // Fallback: if ref not attached, just show final value after delay
+      const timeout = setTimeout(() => {
+        if (!hasStartedRef.current) {
+          setCount(end);
+          hasStartedRef.current = true;
+        }
+      }, 1000);
+      return () => clearTimeout(timeout);
+    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && !hasStarted) {
+        if (entry.isIntersecting && !hasStartedRef.current) {
           startAnimation();
           observer.disconnect();
         }
@@ -107,13 +115,13 @@ export function useCountUp(options: UseCountUpOptions) {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [startOnView, hasStarted]);
+  }, [startOnView, startAnimation, end]);
 
   return {
     ref,
     count,
     formattedCount: formatNumber(count),
-    hasStarted,
+    hasStarted: hasStartedRef.current,
     startAnimation,
   };
 }

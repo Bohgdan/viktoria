@@ -36,7 +36,7 @@ export function Footer() {
               <img
                 src="/images/logo.png"
                 alt={PLACEHOLDER.companyName}
-                className="logo-white h-10 w-auto object-contain"
+                className="h-10 w-auto object-contain"
               />
             </Link>
             <p className="text-[var(--color-text-muted)] mb-6 text-sm leading-relaxed">

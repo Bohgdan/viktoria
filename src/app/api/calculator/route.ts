@@ -17,9 +17,9 @@ export async function POST(request: NextRequest) {
       name,
       phone,
       email: email || undefined,
-      business_type: businessType || 'Не вказано',
-      business_scale: businessScale || 'Не вказано',
-      recommended_products: recommendedProducts,
+      company: businessType || 'Не вказано',
+      items: recommendedProducts || {},
+      total_items: Array.isArray(recommendedProducts) ? recommendedProducts.length : 0,
     });
 
     return NextResponse.json({ success: true });

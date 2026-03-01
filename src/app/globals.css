@@ -623,3 +623,18 @@ textarea::placeholder {
   background-repeat: repeat-y;
   background-size: 100% 320px;
 }
+
+/* ============================================
+   ADMIN PAGE STYLES
+   Hide main site elements when on admin pages
+   ============================================ */
+body.admin-page header,
+body.admin-page footer,
+body.admin-page .messenger-buttons,
+body.admin-page .callback-button {
+  display: none !important;
+}
+
+body.admin-page main {
+  flex: none !important;
+}

@@ -23,3 +23,6 @@ export { Toaster, toast, showToast } from './Toast';
 
 export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, StatsCard } from './Card';
 export type { CardProps, StatsCardProps } from './Card';
+
+export { Pagination } from './Pagination';
+export type { PaginationProps } from './Pagination';

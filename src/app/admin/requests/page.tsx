@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Search, MessageSquare, Phone, Mail, Clock, Trash2 } from 'lucide-react';
+import { Search, MessageSquare, Phone, Mail, Clock, Trash2, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { Modal } from '@/components/ui';
 
 interface Request {
   id: string;
@@ -40,6 +41,8 @@ export default function AdminRequestsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Request | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchRequests();
@@ -80,8 +83,7 @@ export default function AdminRequestsPage() {
   }
 
   async function handleDelete(request: Request) {
-    if (!confirm(`Видалити заявку від "${request.name}"?`)) return;
-
+    setIsDeleting(true);
     try {
       const res = await fetch(`/api/admin/requests/${request.id}?type=${request.type}`, {
         method: 'DELETE',
@@ -92,6 +94,19 @@ export default function AdminRequestsPage() {
     } catch (error) {
       console.error('Error deleting request:', error);
       toast.error('Помилка видалення');
+    } finally {
+      setIsDeleting(false);
+      setDeleteTarget(null);
+    }
+  }
+
+  function openDeleteModal(request: Request) {
+    setDeleteTarget(request);
+  }
+
+  function handleConfirmDelete() {
+    if (deleteTarget) {
+      handleDelete(deleteTarget);
     }
   }
 
@@ -119,19 +134,56 @@ export default function AdminRequestsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl md:text-3xl font-serif font-bold text-[var(--color-text-primary)]">
-          Заявки
-          {newCount > 0 && (
-            <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-sm font-bold rounded-full">
-              {newCount} нових
-            </span>
-          )}
-        </h1>
-        <p className="text-[var(--color-text-muted)] mt-1">
-          Всього {requests.length} заявок
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-serif font-bold text-[var(--color-text-primary)]">
+            Заявки
+            {newCount > 0 && (
+              <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-sm font-bold rounded-full">
+                {newCount} нових
+              </span>
+            )}
+          </h1>
+          <p className="text-[var(--color-text-muted)] mt-1">
+            Всього {requests.length} заявок
+          </p>
+        </div>
+        <button
+          onClick={fetchRequests}
+          disabled={isLoading}
+          className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-secondary)] rounded-lg transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+        </button>
       </div>
+
+      {/* Confirm Delete Modal */}
+      <Modal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        title="Підтвердження видалення"
+      >
+        <div className="space-y-4">
+          <p className="text-[var(--color-text-secondary)]">
+            Ви впевнені, що хочете видалити заявку від &quot;{deleteTarget?.name}&quot;?
+          </p>
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => setDeleteTarget(null)}
+              className="px-4 py-2 bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] rounded-lg hover:bg-[var(--color-bg-hover)] transition-colors"
+            >
+              Скасувати
+            </button>
+            <button
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+            >
+              {isDeleting ? 'Видалення...' : 'Видалити'}
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
@@ -251,7 +303,7 @@ export default function AdminRequestsPage() {
                         ))}
                       </div>
                       <button
-                        onClick={() => handleDelete(request)}
+                        onClick={() => openDeleteModal(request)}
                         className="p-2 text-[var(--color-text-muted)] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />

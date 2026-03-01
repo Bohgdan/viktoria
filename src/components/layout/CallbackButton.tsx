@@ -55,7 +55,7 @@ export function CallbackButton() {
   if (!isVisible) return null;
 
   return (
-    <>
+    <div className="callback-button">
       {/* Floating Button */}
       <button
         onClick={() => setIsOpen(true)}
@@ -129,6 +129,6 @@ export function CallbackButton() {
           </div>
         </>
       )}
-    </>
+    </div>
   );
 }

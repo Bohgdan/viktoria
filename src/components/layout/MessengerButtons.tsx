@@ -52,7 +52,7 @@ export function MessengerButtons() {
   ];
 
   return (
-    <div className="fixed bottom-6 right-6 z-[var(--z-fixed)] flex flex-col items-end gap-3">
+    <div className="messenger-buttons fixed bottom-6 right-6 z-[var(--z-fixed)] flex flex-col items-end gap-3">
       {/* Scroll to top button */}
       <button
         onClick={scrollToTop}

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Save, Loader2, Phone, Mail, MapPin, Clock, Globe, AlertCircle, CheckCircle } from 'lucide-react';
+import { Save, Loader2, Phone, Mail, MapPin, Clock, Globe, CheckCircle, Lock, Eye, EyeOff } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 import toast from 'react-hot-toast';
 
 interface Settings {
@@ -36,6 +37,13 @@ export default function AdminSettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
 
+  // Password change state
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
   // Load settings from database on mount
   useEffect(() => {
     async function loadSettings() {
@@ -45,6 +53,13 @@ export default function AdminSettingsPage() {
           const data = await response.json();
           // Merge loaded settings with defaults
           setSettings(prev => ({ ...prev, ...data }));
+        }
+
+        // Get current user email
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.email) {
+          setUserEmail(user.email);
         }
       } catch (error) {
         console.error('Failed to load settings:', error);
@@ -84,6 +99,42 @@ export default function AdminSettingsPage() {
     setSettings(prev => ({ ...prev, [key]: value }));
     setIsSaved(false);
   };
+
+  async function handleChangePassword() {
+    if (!newPassword || !confirmPassword) {
+      toast.error('Заповніть обидва поля паролю');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('Пароль має бути не менше 6 символів');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('Паролі не співпадають');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success('Пароль успішно змінено');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      console.error('Password change error:', error);
+      toast.error('Помилка зміни паролю');
+    } finally {
+      setIsChangingPassword(false);
+    }
+  }
 
   if (isLoading) {
     return (
@@ -274,14 +325,64 @@ export default function AdminSettingsPage() {
         </div>
       </div>
 
-      {/* Admin Credentials Info */}
-      <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
-        <p className="text-sm text-yellow-400">
-          <strong>Дані для входу в адмін-панель:</strong><br />
-          Логін: admin<br />
-          Пароль: perfect4you2013<br />
-          <span className="text-yellow-400/70">(Змініть пароль у коді перед продакшеном)</span>
-        </p>
+      {/* Admin Security */}
+      <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
+          <Lock className="w-5 h-5" />
+          Безпека
+        </h2>
+        
+        {userEmail && (
+          <div className="mb-4 p-3 bg-[var(--color-bg-secondary)] rounded-lg">
+            <p className="text-sm text-[var(--color-text-muted)]">
+              Поточний користувач: <span className="text-[var(--color-text-primary)]">{userEmail}</span>
+            </p>
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
+              Новий пароль
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full px-3 py-2 pr-10 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)]"
+                placeholder="Мінімум 6 символів"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
+              Підтвердіть пароль
+            </label>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full px-3 py-2 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)]"
+              placeholder="Повторіть пароль"
+            />
+          </div>
+          <button
+            onClick={handleChangePassword}
+            disabled={isChangingPassword || !newPassword || !confirmPassword}
+            className="px-4 py-2 bg-[var(--color-accent)] text-[var(--color-accent-dark)] rounded-lg font-semibold hover:bg-[var(--color-accent-hover)] transition-colors disabled:opacity-50 flex items-center gap-2"
+          >
+            {isChangingPassword && <Loader2 className="w-4 h-4 animate-spin" />}
+            Змінити пароль
+          </button>
+        </div>
       </div>
     </div>
   );

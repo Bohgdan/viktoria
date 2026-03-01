@@ -2,21 +2,13 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { Eye, EyeOff, Lock, User, Loader2 } from 'lucide-react';
-import { PLACEHOLDER } from '@/lib/constants';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 import toast from 'react-hot-toast';
-
-// Simple hardcoded credentials for MVP
-// In production, use Supabase Auth or similar
-const ADMIN_CREDENTIALS = {
-  username: 'admin',
-  password: 'perfect4you2013',
-};
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState({ username: '', password: '' });
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -24,18 +16,28 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
 
-    if (
-      formData.username === ADMIN_CREDENTIALS.username &&
-      formData.password === ADMIN_CREDENTIALS.password
-    ) {
-      localStorage.setItem('admin_auth', 'authenticated');
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          toast.error('Невірний email або пароль');
+        } else {
+          toast.error(error.message);
+        }
+        setIsLoading(false);
+        return;
+      }
+
       toast.success('Вхід виконано успішно');
       router.push('/admin');
-    } else {
-      toast.error('Невірний логін або пароль');
+      router.refresh();
+    } catch {
+      toast.error('Помилка з\'єднання. Спробуйте пізніше.');
     }
 
     setIsLoading(false);
@@ -46,13 +48,12 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Image
-            src="/images/logo.png"
-            alt={PLACEHOLDER.companyName}
-            width={180}
-            height={54}
-            className="h-14 w-auto object-contain mx-auto mb-4"
-          />
+          <div className="mb-4">
+            <span className="text-4xl font-serif font-bold">
+              <span className="text-[var(--color-accent)]">Perfect</span>
+              <span className="text-[var(--color-text-primary)]">4you</span>
+            </span>
+          </div>
           <h1 className="text-2xl font-serif font-bold text-[var(--color-text-primary)]">
             Панель адміністратора
           </h1>
@@ -68,19 +69,16 @@ export default function AdminLoginPage() {
         >
           <div>
             <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
-              Логін
+              Email
             </label>
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--color-text-muted)]" />
-              <input
-                type="text"
-                value={formData.username}
-                onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
-                className="w-full pl-10 pr-4 py-3 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-colors"
-                placeholder="Введіть логін"
-                required
-              />
-            </div>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              className="w-full px-4 py-3 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-colors"
+              placeholder="Введіть email"
+              required
+            />
           </div>
 
           <div>
@@ -88,12 +86,11 @@ export default function AdminLoginPage() {
               Пароль
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--color-text-muted)]" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={formData.password}
                 onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                className="w-full pl-10 pr-12 py-3 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-colors"
+                className="w-full px-4 pr-12 py-3 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-colors"
                 placeholder="Введіть пароль"
                 required
               />

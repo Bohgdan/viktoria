@@ -85,7 +85,7 @@ export const db = {
 
   // Products
   async getProducts(options?: { categoryId?: string; subcategoryId?: string; featured?: boolean; limit?: number }) {
-    let queryText = 'SELECT *, is_featured as featured, is_active as is_visible FROM products WHERE is_active = true';
+    let queryText = 'SELECT * FROM products WHERE is_visible = true';
     const params: (string | number | boolean)[] = [];
     let paramIndex = 1;
 
@@ -98,7 +98,7 @@ export const db = {
       params.push(options.subcategoryId);
     }
     if (options?.featured) {
-      queryText += ' AND is_featured = true';
+      queryText += ' AND featured = true';
     }
     queryText += ' ORDER BY sort_order';
     if (options?.limit) {
@@ -112,22 +112,22 @@ export const db = {
 
   async getProductBySlug(slug: string) {
     const result = await query(
-      'SELECT *, is_featured as featured, is_active as is_visible FROM products WHERE slug = $1 AND is_active = true',
+      'SELECT * FROM products WHERE slug = $1 AND is_visible = true',
       [slug]
     );
     return result.rows[0] || null;
   },
 
   async getProductById(id: string) {
-    const result = await query('SELECT *, is_featured as featured, is_active as is_visible FROM products WHERE id = $1', [id]);
+    const result = await query('SELECT * FROM products WHERE id = $1', [id]);
     return result.rows[0] || null;
   },
 
   // Reviews
   async getApprovedReviews() {
     const result = await query(
-      `SELECT id, author_name, author_company as company, content as text, rating, is_visible, sort_order, created_at 
-       FROM reviews WHERE is_approved = true AND is_visible = true ORDER BY sort_order, created_at DESC`
+      `SELECT id, author_name, company, text, rating, is_visible, sort_order, created_at 
+       FROM reviews WHERE is_visible = true ORDER BY sort_order, created_at DESC`
     );
     return result.rows;
   },
@@ -161,44 +161,90 @@ export const db = {
     name: string;
     phone: string;
     email?: string;
-    business_type: string;
-    business_scale: string;
-    recommended_products?: object;
+    company?: string;
+    items?: object;
+    total_items?: number;
   }) {
     const result = await query(
-      `INSERT INTO calculator_requests (name, phone, email, business_type, business_scale, recommended_products, status) 
+      `INSERT INTO calculator_requests (name, phone, email, company, items, total_items, status) 
        VALUES ($1, $2, $3, $4, $5, $6, 'new') RETURNING *`,
       [
         data.name,
         data.phone,
         data.email || null,
-        data.business_type,
-        data.business_scale,
-        JSON.stringify(data.recommended_products || {}),
+        data.company || null,
+        JSON.stringify(data.items || {}),
+        data.total_items || 0,
       ]
     );
     return result.rows[0];
   },
 
   // Admin functions
-  async getAllProducts() {
+  async getAllProducts(options?: { page?: number; limit?: number; search?: string }) {
+    const page = options?.page || 1;
+    const limit = options?.limit || 50;
+    const offset = (page - 1) * limit;
+    const search = options?.search;
+
+    let whereClause = '';
+    const params: (string | number)[] = [];
+    let paramIndex = 1;
+
+    if (search) {
+      whereClause = `WHERE p.name ILIKE $${paramIndex} OR c.name ILIKE $${paramIndex} OR s.name ILIKE $${paramIndex}`;
+      params.push(`%${search}%`);
+      paramIndex++;
+    }
+
+    // Get total count
+    const countResult = await query(`
+      SELECT COUNT(*)::int as total
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
+      LEFT JOIN subcategories s ON p.subcategory_id = s.id
+      ${whereClause}
+    `, params);
+    const total = countResult.rows[0]?.total || 0;
+
+    // Get paginated products
     const result = await query(`
       SELECT p.*, 
-             p.is_featured as featured,
-             p.is_active as is_visible,
              c.name as category_name, 
              s.name as subcategory_name
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
       LEFT JOIN subcategories s ON p.subcategory_id = s.id
+      ${whereClause}
       ORDER BY p.name
-    `);
-    return result.rows;
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `, [...params, limit, offset]);
+
+    return {
+      products: result.rows,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    };
   },
 
   async updateProduct(id: string, data: Record<string, unknown>) {
-    const keys = Object.keys(data);
-    const values = Object.values(data) as (string | number | boolean | null | undefined)[];
+    // Filter out undefined values to avoid overwriting fields with undefined
+    const filteredData: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) {
+        filteredData[key] = value;
+      }
+    }
+    
+    const keys = Object.keys(filteredData);
+    if (keys.length === 0) {
+      const current = await query('SELECT * FROM products WHERE id = $1', [id]);
+      return current.rows[0];
+    }
+    
+    const values = Object.values(filteredData) as (string | number | boolean | null)[];
     const setClause = keys.map((key, i) => `${key} = $${i + 2}`).join(', ');
     
     const result = await query(
@@ -252,8 +298,22 @@ export const db = {
   },
 
   async updateCategory(id: string, data: Record<string, unknown>) {
-    const keys = Object.keys(data);
-    const values = Object.values(data) as (string | number | boolean | null | undefined)[];
+    // Filter out undefined values
+    const filteredData: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) {
+        filteredData[key] = value;
+      }
+    }
+    
+    const keys = Object.keys(filteredData);
+    if (keys.length === 0) {
+      // Nothing to update, just return the current category
+      const current = await query('SELECT * FROM categories WHERE id = $1', [id]);
+      return current.rows[0];
+    }
+    
+    const values = Object.values(filteredData) as (string | number | boolean | null)[];
     const setClause = keys.map((key, i) => `${key} = $${i + 2}`).join(', ');
     
     const result = await query(
@@ -284,8 +344,21 @@ export const db = {
   },
 
   async updateSubcategory(id: string, data: Record<string, unknown>) {
-    const keys = Object.keys(data);
-    const values = Object.values(data) as (string | number | boolean | null | undefined)[];
+    // Filter out undefined values
+    const filteredData: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) {
+        filteredData[key] = value;
+      }
+    }
+    
+    const keys = Object.keys(filteredData);
+    if (keys.length === 0) {
+      const current = await query('SELECT * FROM subcategories WHERE id = $1', [id]);
+      return current.rows[0];
+    }
+    
+    const values = Object.values(filteredData) as (string | number | boolean | null)[];
     const setClause = keys.map((key, i) => `${key} = $${i + 2}`).join(', ');
     
     const result = await query(
@@ -303,7 +376,7 @@ export const db = {
       `SELECT id, name, phone, NULL as email, NULL as message, status, created_at, 'callback' as type FROM callback_requests ORDER BY created_at DESC`
     );
     const calculatorRequests = await query(
-      `SELECT id, name, phone, email, business_type || ' - ' || business_scale as message, status, created_at, 'calculator' as type FROM calculator_requests ORDER BY created_at DESC`
+      `SELECT id, name, phone, email, COALESCE(company, '') || ' (' || COALESCE(total_items::text, '0') || ' позицій)' as message, status, created_at, 'calculator' as type FROM calculator_requests ORDER BY created_at DESC`
     );
     
     interface RequestRow { created_at: string; }
@@ -363,18 +436,21 @@ export const db = {
 
   // Dashboard stats
   async getDashboardStats() {
-    const [products, categories, contactRequests, callbackRequests, reviews] = await Promise.all([
+    const [products, categories, contactRequests, callbackRequests, calculatorRequests, reviews] = await Promise.all([
       query('SELECT COUNT(*) as count FROM products'),
       query('SELECT COUNT(*) as count FROM categories'),
       query('SELECT COUNT(*) as count FROM contact_requests WHERE status = $1', ['new']),
       query('SELECT COUNT(*) as count FROM callback_requests WHERE status = $1', ['new']),
+      query('SELECT COUNT(*) as count FROM calculator_requests WHERE status = $1', ['new']),
       query('SELECT COUNT(*) as count FROM reviews'),
     ]);
 
     return {
       products: parseInt(String(products.rows[0]?.count || '0')),
       categories: parseInt(String(categories.rows[0]?.count || '0')),
-      newRequests: parseInt(String(contactRequests.rows[0]?.count || '0')) + parseInt(String(callbackRequests.rows[0]?.count || '0')),
+      newRequests: parseInt(String(contactRequests.rows[0]?.count || '0')) + 
+                   parseInt(String(callbackRequests.rows[0]?.count || '0')) +
+                   parseInt(String(calculatorRequests.rows[0]?.count || '0')),
       reviews: parseInt(String(reviews.rows[0]?.count || '0')),
     };
   },

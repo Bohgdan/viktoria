@@ -8,10 +8,15 @@ const headers = {
   'Cache-Control': 'no-store, no-cache, must-revalidate',
 };
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const products = await db.getAllProducts();
-    return NextResponse.json(products, { headers });
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '25');
+    const search = searchParams.get('search') || undefined;
+
+    const result = await db.getAllProducts({ page, limit, search });
+    return NextResponse.json(result, { headers });
   } catch (error) {
     console.error('Products API error:', error);
     return NextResponse.json(

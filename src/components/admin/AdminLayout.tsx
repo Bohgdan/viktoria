@@ -3,7 +3,6 @@
 import { useState, useEffect, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import {
   LayoutDashboard,
   Package,
@@ -16,8 +15,9 @@ import {
   X,
   ChevronRight,
 } from 'lucide-react';
-import { PLACEHOLDER } from '@/lib/constants';
+import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
+import toast from 'react-hot-toast';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -38,21 +38,47 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check authentication
-    const authToken = localStorage.getItem('admin_auth');
-    if (authToken) {
-      setIsAuthenticated(true);
-    } else if (pathname !== '/admin/login') {
-      router.push('/admin/login');
-    }
-    setIsLoading(false);
+    // Check authentication with Supabase
+    const checkAuth = async () => {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        setIsAuthenticated(true);
+        setUserEmail(session.user.email || null);
+      } else if (pathname !== '/admin/login') {
+        router.push('/admin/login');
+      }
+      setIsLoading(false);
+    };
+
+    checkAuth();
+
+    // Listen for auth changes
+    const supabase = createClient();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setIsAuthenticated(false);
+        setUserEmail(null);
+        router.push('/admin/login');
+      } else if (session?.user) {
+        setIsAuthenticated(true);
+        setUserEmail(session.user.email || null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, [pathname, router]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('admin_auth');
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    toast.success('Ви вийшли з системи');
     router.push('/admin/login');
+    router.refresh();
   };
 
   if (isLoading) {
@@ -92,13 +118,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         {/* Logo */}
         <div className="h-16 px-4 flex items-center justify-between border-b border-[var(--color-border)]">
           <Link href="/admin" className="flex items-center gap-2">
-            <Image
-              src="/images/logo.png"
-              alt={PLACEHOLDER.companyName}
-              width={490}
-              height={200}
-              className="h-8 w-auto object-contain"
-            />
+            <span className="text-xl font-serif font-bold">
+              <span className="text-[var(--color-accent)]">Perfect</span>
+              <span className="text-[var(--color-text-primary)]">4you</span>
+            </span>
           </Link>
           <button
             onClick={() => setIsSidebarOpen(false)}
@@ -134,6 +157,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
         {/* User Section */}
         <div className="p-4 border-t border-[var(--color-border)]">
+          {userEmail && (
+            <div className="px-3 py-2 mb-2 text-sm text-[var(--color-text-muted)] truncate">
+              {userEmail}
+            </div>
+          )}
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[var(--color-text-muted)] hover:bg-red-500/10 hover:text-red-400 transition-colors"

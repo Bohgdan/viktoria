@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Montserrat } from "next/font/google";
 import "./globals.css";
-import { Header, Footer, MessengerButtons, CallbackButton } from "@/components/layout";
+import { Header, Footer, MessengerButtons, CallbackButton, ScrollReveal, CustomCursor } from "@/components/layout";
 import { Toaster } from "@/components/ui";
 import { PLACEHOLDER } from "@/lib/constants";
 import { SettingsProvider } from "@/lib/SettingsContext";
@@ -63,6 +63,8 @@ export default function RootLayout({
         className={`${playfairDisplay.variable} ${montserrat.variable} antialiased min-h-screen flex flex-col`}
       >
         <SettingsProvider>
+          <ScrollReveal />
+          <CustomCursor />
           <Header />
           <main className="flex-1 relative z-10">{children}</main>
           <Footer />

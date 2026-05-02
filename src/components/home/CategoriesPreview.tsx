@@ -32,44 +32,60 @@ export function CategoriesPreview({ categories = demoCategories }: CategoriesPre
   }
 
   return (
-    <section className="py-16 lg:py-20 relative">
+    <section className="py-20 lg:py-28 relative">
       {/* Decorative waves */}
       <div className="decorative-waves" />
+      {/* Ambient glow */}
+      <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[60%] h-40 bg-[var(--color-accent)]/10 blur-[100px] pointer-events-none" />
 
       <div className="container relative z-10">
         {/* Title */}
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 font-[family-name:var(--font-heading)] text-[var(--color-text-primary)]">
-            Каталог
+        <div className="text-center mb-14 reveal-up" data-reveal>
+          <span className="kicker mb-5">
+            <span>Каталог</span>
+          </span>
+          <h2 className="section-heading mt-4">
+            Натуральні смаки <span className="text-[var(--color-accent)] italic font-[family-name:var(--font-heading)]">Закарпаття</span>
           </h2>
-          <p className="text-[var(--color-text-muted)] max-w-2xl mx-auto">
+          <div className="section-divider mt-5">
+            <span className="dot" />
+          </div>
+          <p className="text-[var(--color-text-secondary)] max-w-2xl mx-auto mt-5 leading-relaxed">
             Приправи, макарони, консерви та олія від прямого постачальника
           </p>
         </div>
 
         {/* Category Cards — 3 column */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-          {categories.slice(0, 3).map((category) => (
+          {categories.slice(0, 3).map((category, idx) => (
             <Link
               key={category.id}
               href={`/catalog/${category.slug}`}
-              className="group bg-[var(--color-bg-card)]/60 backdrop-blur-sm border border-[var(--color-border)] rounded-xl overflow-hidden hover:border-[var(--color-accent)] transition-all duration-300"
+              className="group card-premium lift reveal-up block"
+              data-reveal
+              style={{ transitionDelay: `${idx * 120}ms` }}
             >
               {/* Image placeholder */}
-              <div className="h-48 bg-[var(--color-bg-hover)] flex items-center justify-center relative overflow-hidden">
-                <Camera className="w-12 h-12 text-[var(--color-text-light)]" />
-                {/* Hover overlay */}
-                <div className="absolute inset-0 bg-[var(--color-accent)]/0 group-hover:bg-[var(--color-accent)]/10 transition-colors duration-300" />
+              <div className="relative h-56 lg:h-64 overflow-hidden bg-gradient-to-br from-[var(--color-bg-hover)] to-[var(--color-bg-card)]">
+                <div className="absolute inset-0 flex items-center justify-center zoom-img">
+                  <Camera className="w-14 h-14 text-[var(--color-text-light)]" />
+                </div>
+                <div className="img-overlay-warm" />
+                <div className="img-overlay-accent" />
+                {/* Number tag */}
+                <span className="absolute top-4 left-4 text-[10px] uppercase tracking-[0.3em] text-[var(--color-accent)] bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded-full border border-[var(--color-accent)]/30">
+                  0{idx + 1}
+                </span>
               </div>
 
               {/* Category name + button */}
-              <div className="p-5">
-                <h3 className="text-lg font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-accent)] transition-colors mb-3">
+              <div className="p-6">
+                <h3 className="text-xl font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-accent)] transition-colors mb-4 font-[family-name:var(--font-heading)]">
                   {category.name}
                 </h3>
-                <span className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-accent)] text-[var(--color-accent-dark)] rounded-lg text-sm font-semibold group-hover:bg-[var(--color-accent-hover)] transition-colors">
+                <span className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)] group-hover:gap-3 transition-all">
                   Замовити
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </span>
               </div>
             </Link>
@@ -77,11 +93,8 @@ export function CategoriesPreview({ categories = demoCategories }: CategoriesPre
         </div>
 
         {/* View all button */}
-        <div className="text-center mt-10">
-          <Link
-            href="/catalog"
-            className="inline-flex items-center gap-2 px-8 py-3.5 bg-[var(--color-accent)] text-[var(--color-accent-dark)] rounded-lg font-semibold hover:bg-[var(--color-accent-hover)] transition-colors uppercase tracking-wide"
-          >
+        <div className="text-center mt-14 reveal-up" data-reveal>
+          <Link href="/catalog" className="btn-premium">
             Весь каталог
             <ArrowRight className="w-5 h-5" />
           </Link>

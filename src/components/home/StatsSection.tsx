@@ -36,19 +36,19 @@ function AnimatedStat({ stat, index }: { stat: StatItem; index: number }) {
   const displayLabel = stat.label === 'Вся Україна' ? 'Географія поставок' : stat.label;
 
   return (
-    <div 
-      className="bg-[var(--color-bg-card)]/60 backdrop-blur-sm border border-[var(--color-border)] rounded-xl p-6 text-center hover:border-[var(--color-accent)]/50 transition-all duration-300 group"
+    <div
+      className="group card-premium lift p-7 text-center reveal-up"
+      style={{ transitionDelay: `${index * 90}ms` }}
+      data-reveal
+      ref={ref as React.RefObject<HTMLDivElement>}
     >
-      <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-[var(--color-accent)]/10 flex items-center justify-center group-hover:bg-[var(--color-accent)]/20 transition-colors">
-        <Icon className="w-7 h-7 text-[var(--color-accent)]" />
+      <div className="icon-orb mx-auto mb-5">
+        <Icon className="w-6 h-6" />
       </div>
-      <div 
-        ref={ref as React.RefObject<HTMLDivElement>}
-        className="text-3xl md:text-4xl font-bold text-[var(--color-accent)] mb-2 font-[family-name:var(--font-heading)] count-up"
-      >
+      <div className="text-3xl md:text-4xl font-bold text-[var(--color-accent)] mb-2 font-[family-name:var(--font-heading)] count-up tracking-tight">
         {displayValue}
       </div>
-      <div className="text-sm text-[var(--color-text-muted)]">
+      <div className="text-sm uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
         {displayLabel}
       </div>
     </div>
@@ -57,7 +57,8 @@ function AnimatedStat({ stat, index }: { stat: StatItem; index: number }) {
 
 export function StatsSection() {
   return (
-    <section className="section">
+    <section className="section relative">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--color-border)] to-transparent" />
       <div className="container">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           {STATS.map((stat, index) => (

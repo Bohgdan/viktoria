@@ -49,8 +49,11 @@ export function HeroSection() {
     }
   };
 
+  // Split title into chars for reveal animation
+  const titleWords = PLACEHOLDER.heroTitle.split(' ');
+
   return (
-    <section ref={sectionRef} className="relative min-h-screen flex items-center overflow-hidden">
+    <section ref={sectionRef} className="relative min-h-screen flex items-center overflow-hidden has-grain">
       {/* Background Image with Parallax */}
       <div className="absolute inset-0">
         {/* Food flat-lay photo background - spices/grains dark aesthetic with parallax */}
@@ -62,15 +65,21 @@ export function HeroSection() {
           }}
         />
         {/* Dark overlay */}
-        <div className="absolute inset-0 bg-[#0b0d12]/70" />
-        {/* Additional gradient for depth */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0b0d12]/30 via-transparent to-[#0b0d12]/90" />
-        
+        <div className="absolute inset-0 bg-[#0b0d12]/72" />
+        {/* Vignette + warm gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0b0d12]/40 via-transparent to-[#0b0d12]/95" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_30%,rgba(201,169,98,0.10),transparent_60%)]" />
+
         {/* Decorative wavy lines */}
         <div className="decorative-waves" />
-        
+
+        {/* Floating ambient orbs */}
+        <div className="absolute top-[18%] left-[8%] w-72 h-72 rounded-full bg-[var(--color-accent)]/10 blur-3xl pointer-events-none" style={{ animation: 'floatXY 14s ease-in-out infinite' }} />
+        <div className="absolute bottom-[10%] right-[6%] w-96 h-96 rounded-full bg-[var(--color-accent-warm)]/10 blur-3xl pointer-events-none" style={{ animation: 'floatXY 18s ease-in-out infinite reverse' }} />
+
         {/* Accent glow at top */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[2px] bg-gradient-to-r from-transparent via-[var(--color-accent)]/30 to-transparent" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[2px] bg-gradient-to-r from-transparent via-[var(--color-accent)]/40 to-transparent" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[1px] bg-gradient-to-r from-transparent via-[var(--color-accent)]/20 to-transparent" />
       </div>
 
       {/* Content */}
@@ -78,43 +87,54 @@ export function HeroSection() {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left Column - Content */}
           <div>
-            {/* Logo mark */}
-            <div className="flex items-center gap-2 mb-6">
-              <span className="text-sm font-medium text-[var(--color-accent)] uppercase tracking-[0.2em]">
-                {PLACEHOLDER.companyName}
-              </span>
-              <div className="h-[1px] w-12 bg-[var(--color-accent)]/50" />
+            {/* Kicker */}
+            <div className="kicker kicker-left mb-6" style={{ animation: 'blurIn .9s .1s both' }}>
+              <span>{PLACEHOLDER.companyName}</span>
             </div>
 
-            {/* Main Heading */}
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-[56px] font-bold text-[var(--color-text-primary)] mb-6 leading-[1.15] font-[family-name:var(--font-heading)] uppercase tracking-wide">
-              {PLACEHOLDER.heroTitle}
+            {/* Main Heading — char reveal */}
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-[58px] font-bold text-[var(--color-text-primary)] mb-6 leading-[1.08] font-[family-name:var(--font-heading)] uppercase tracking-tight">
+              <span className="title-reveal">
+                {titleWords.map((word, wi) => {
+                  // accent every other word
+                  const accent = wi % 2 === 1;
+                  return (
+                    <span key={wi} className="word">
+                      {Array.from(word).map((ch, ci) => (
+                        <span
+                          key={ci}
+                          className="char"
+                          style={{
+                            animationDelay: `${0.25 + (wi * 0.08) + (ci * 0.025)}s`,
+                            color: accent ? 'var(--color-accent)' : undefined,
+                          }}
+                        >{ch}</span>
+                      ))}
+                      {wi < titleWords.length - 1 && <span className="char" style={{ animationDelay: `${0.25 + (wi * 0.08)}s` }}>&nbsp;</span>}
+                    </span>
+                  );
+                })}
+              </span>
             </h1>
 
             {/* Subtitle */}
-            <p className="text-base lg:text-lg text-[var(--color-text-secondary)] mb-10 max-w-lg leading-relaxed">
+            <p className="text-base lg:text-lg text-[var(--color-text-secondary)] mb-10 max-w-lg leading-relaxed" style={{ animation: 'blurIn 1s .9s both' }}>
               {PLACEHOLDER.heroSubtitle}
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex flex-wrap gap-4">
-              <Link
-                href="/catalog"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-[var(--color-accent)] text-[var(--color-accent-dark)] rounded-lg font-semibold text-lg hover:bg-[var(--color-accent-hover)] transition-all duration-300 group uppercase tracking-wide"
-              >
+            <div className="flex flex-wrap gap-4" style={{ animation: 'blurIn 1s 1.1s both' }}>
+              <Link href="/catalog" className="btn-premium">
                 Каталог
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-5 h-5" />
               </Link>
-              <Link
-                href="/contacts"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-transparent border border-[var(--color-text-light)] text-[var(--color-text-primary)] rounded-lg font-semibold text-lg hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all duration-300"
-              >
+              <Link href="/contacts" className="btn-outline-premium">
                 Отримати прайс
               </Link>
             </div>
 
             {/* Messenger pills */}
-            <div className="flex flex-wrap gap-3 mt-10">
+            <div className="flex flex-wrap gap-3 mt-10" style={{ animation: 'blurIn 1s 1.3s both' }}>
               <a
                 href={`viber://chat?number=${PLACEHOLDER.phone.replace(/\D/g, '')}`}
                 className="inline-flex items-center gap-2 px-4 py-2 border border-[var(--color-text-light)] rounded-full text-[var(--color-text-secondary)] text-sm font-medium hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all"
@@ -150,8 +170,8 @@ export function HeroSection() {
           </div>
 
           {/* Right Column - Order Form */}
-          <div className="lg:flex lg:justify-end">
-            <div className="bg-[var(--color-bg-card)]/80 backdrop-blur-xl border border-[var(--color-border)] rounded-xl p-8 max-w-md w-full">
+          <div className="lg:flex lg:justify-end" style={{ animation: 'blurIn 1.1s .6s both' }}>
+            <div className="relative card-premium p-8 max-w-md w-full" style={{ animation: 'glowPulse 4s ease-in-out infinite' }}>
               <h3 className="text-2xl font-bold text-[var(--color-text-primary)] mb-2 font-[family-name:var(--font-heading)]">
                 Швидке замовлення
               </h3>

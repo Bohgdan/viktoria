@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Montserrat } from "next/font/google";
 import "./globals.css";
-import { Header, Footer, MessengerButtons, CallbackButton, ScrollReveal, CustomCursor } from "@/components/layout";
+import { Header, Footer, MessengerButtons, CallbackButton, ScrollReveal, CustomCursor, FloatingPlayables } from "@/components/layout";
 import { Toaster } from "@/components/ui";
 import { PLACEHOLDER } from "@/lib/constants";
 import { SettingsProvider } from "@/lib/SettingsContext";
@@ -65,6 +65,7 @@ export default function RootLayout({
         <SettingsProvider>
           <ScrollReveal />
           <CustomCursor />
+          <FloatingPlayables />
           <Header />
           <main className="flex-1 relative z-10">{children}</main>
           <Footer />

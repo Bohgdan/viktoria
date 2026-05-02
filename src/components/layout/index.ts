@@ -5,3 +5,4 @@ export { MessengerButtons } from './MessengerButtons';
 export { CallbackButton } from './CallbackButton';
 export { ScrollReveal } from './ScrollReveal';
 export { CustomCursor } from './CustomCursor';
+export { FloatingPlayables } from './FloatingPlayables';

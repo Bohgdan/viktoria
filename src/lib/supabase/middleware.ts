@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr';
+﻿import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function updateSession(request: NextRequest) {
@@ -7,9 +7,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.next();
   }
 
-  let supabaseResponse = NextResponse.next({
-    request,
-  });
+  let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,9 +21,7 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
-          supabaseResponse = NextResponse.next({
-            request,
-          });
+          supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           );
@@ -34,17 +30,20 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Do not run code between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // IMPORTANT: use getSession() in middleware — reads cookie locally without a
+  // network call to Supabase. This avoids MIDDLEWARE_INVOCATION_TIMEOUT on Vercel.
+  // Pages / route handlers can still call getUser() to validate the JWT.
+  let user: { id: string } | null = null;
+  try {
+    const { data } = await supabase.auth.getSession();
+    user = data.session?.user ?? null;
+  } catch (err) {
+    console.error('Supabase middleware getSession failed:', err);
+    return supabaseResponse;
+  }
 
   const { pathname } = request.nextUrl;
 
-  // Protect admin routes (except login page)
   if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
     if (!user) {
       const url = request.nextUrl.clone();
@@ -53,17 +52,12 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  // Protect admin API routes
   if (pathname.startsWith('/api/admin')) {
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
   }
 
-  // Redirect authenticated users from login page to dashboard
   if (pathname === '/admin/login' && user) {
     const url = request.nextUrl.clone();
     url.pathname = '/admin';
